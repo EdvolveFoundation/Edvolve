@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+/* HERO LINE */
+.hero-line {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: clamp(280px, 60vw, 600px);
+  height: clamp(140px, 30vw, 300px);
+  border: 1px solid #b6a545;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  opacity: 0.4;
+}
+
+/* VERTICAL TEXT */
+.vertical-text,
+.vertical-text-small {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: clamp(10px, 1.2vw, 12px);
+  color: #666;
+  letter-spacing: 2px;
+}
+
+/* DESKTOP GALLERY */
+.hero-gallery {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.hero-card {
+  position: relative;
+  width: 200px;
+  height: 380px;
+  overflow: hidden;
+
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 82%,
+    50% 100%,
+    0 82%
+  );
+}
+
+.hero-card:nth-child(2) {
+  height: 440px;
+}
+
+.hero-card:nth-child(3) {
+  height: 420px;
+}
+
+.hero-card:nth-child(4) {
+  height: 380px;
+}
+
+/* MOBILE HERO */
+.mobile-hero {
+  position: relative;
+  width: min(90vw, 420px);
+  height: 560px;
+  overflow: hidden;
+
+  clip-path: url(#heroShape);
+}
+
+@media (max-width: 640px) {
+  .mobile-hero {
+    width: 90vw;
+    height: 70vh;
+    min-height: 450px;
+    max-height: 650px;
+  }
+}
