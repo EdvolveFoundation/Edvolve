@@ -3,29 +3,30 @@
 import { useState } from "react";
 import {
   User,
-  Mail,
-  Phone,
   Briefcase,
-  Building2,
-  MapPin,
   Save,
+  Image as ImageIcon,
+  FileText,
+  Users,
 } from "lucide-react";
 
-export default function StaffPage() {
+export default function ManagementAdminPage() {
   const [formData, setFormData] = useState({
     fullName: "",
-    email: "",
-    phone: "",
     role: "",
-    department: "",
-    address: "",
+    bio: "",
+    image: "",
+    category: "management",
+    featured: false,
   });
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value, type, checked } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -34,59 +35,65 @@ export default function StaffPage() {
     try {
       console.log(formData);
 
-      alert("Staff saved successfully!");
+      // API CALL HERE
+
+      alert("Member added successfully");
+
+      setFormData({
+        fullName: "",
+        role: "",
+        bio: "",
+        image: "",
+        category: "management",
+        featured: false,
+      });
     } catch (error) {
       console.error(error);
-      alert("Something went wrong");
+      alert("Failed to save member");
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
 
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="max-w-5xl mx-auto">
 
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Staff Registration
+        {/* HEADER */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">
+            Management Administration
           </h1>
 
           <p className="text-gray-500 mt-2">
-            Create and manage staff member profiles.
+            Manage Board of Trustees and Management Team members.
           </p>
         </div>
 
-        {/* Form Card */}
+        {/* FORM CARD */}
         <div className="bg-white rounded-3xl shadow-sm border overflow-hidden">
 
-          {/* Card Header */}
           <div className="border-b p-6">
-
-            <h2 className="text-xl font-semibold text-gray-900">
-              Staff Information
+            <h2 className="text-xl font-semibold">
+              Member Information
             </h2>
 
             <p className="text-sm text-gray-500 mt-1">
-              Fill in staff details below.
+              Add a board member or management team member.
             </p>
-
           </div>
 
-          {/* Form */}
           <form
             onSubmit={handleSubmit}
-            className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6"
+            className="p-6 grid md:grid-cols-2 gap-6"
           >
 
-            {/* Full Name */}
+            {/* FULL NAME */}
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">
+              <label className="block mb-2 text-sm font-medium">
                 Full Name
               </label>
 
               <div className="relative">
-
                 <User
                   size={18}
                   className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
@@ -95,72 +102,22 @@ export default function StaffPage() {
                 <input
                   type="text"
                   name="fullName"
-                  placeholder="John Doe"
                   value={formData.fullName}
                   onChange={handleChange}
+                  placeholder="Enter full name"
                   required
-                  className="w-full pl-11 pr-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-black"
+                  className="w-full pl-11 pr-4 py-3 border rounded-xl"
                 />
               </div>
             </div>
 
-            {/* Email */}
+            {/* ROLE */}
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">
-                Email Address
+              <label className="block mb-2 text-sm font-medium">
+                Position / Role
               </label>
 
               <div className="relative">
-
-                <Mail
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="john@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full pl-11 pr-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-black"
-                />
-              </div>
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">
-                Phone Number
-              </label>
-
-              <div className="relative">
-
-                <Phone
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-
-                <input
-                  type="text"
-                  name="phone"
-                  placeholder="+234 800 000 0000"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full pl-11 pr-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-black"
-                />
-              </div>
-            </div>
-
-            {/* Role */}
-            <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">
-                Role
-              </label>
-
-              <div className="relative">
-
                 <Briefcase
                   size={18}
                   className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
@@ -169,90 +126,123 @@ export default function StaffPage() {
                 <input
                   type="text"
                   name="role"
-                  placeholder="Manager"
                   value={formData.role}
                   onChange={handleChange}
-                  className="w-full pl-11 pr-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-black"
+                  placeholder="Chairman, Director of Operations..."
+                  required
+                  className="w-full pl-11 pr-4 py-3 border rounded-xl"
                 />
               </div>
             </div>
 
-            {/* Department */}
+            {/* CATEGORY */}
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">
-                Department
+              <label className="block mb-2 text-sm font-medium">
+                Category
               </label>
 
               <div className="relative">
-
-                <Building2
+                <Users
                   size={18}
                   className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
                 />
 
                 <select
-                  name="department"
-                  value={formData.department}
+                  name="category"
+                  value={formData.category}
                   onChange={handleChange}
-                  className="w-full pl-11 pr-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-black appearance-none bg-white"
+                  className="w-full pl-11 pr-4 py-3 border rounded-xl bg-white"
                 >
-                  <option value="">
-                    Select Department
+                  <option value="board">
+                    Board of Trustees
                   </option>
 
-                  <option value="HR">HR</option>
-                  <option value="Finance">Finance</option>
-                  <option value="Operations">Operations</option>
-                  <option value="Marketing">Marketing</option>
-                  <option value="IT">IT</option>
+                  <option value="management">
+                    Management Team
+                  </option>
                 </select>
-
               </div>
             </div>
 
-            {/* Address */}
-            <div className="md:col-span-2">
-
-              <label className="block text-sm font-medium mb-2 text-gray-700">
-                Address
+            {/* IMAGE */}
+            <div>
+              <label className="block mb-2 text-sm font-medium">
+                Image URL
               </label>
 
               <div className="relative">
+                <ImageIcon
+                  size={18}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                />
 
-                <MapPin
+                <input
+                  type="text"
+                  name="image"
+                  value={formData.image}
+                  onChange={handleChange}
+                  placeholder="/images/member.jpg"
+                  className="w-full pl-11 pr-4 py-3 border rounded-xl"
+                />
+              </div>
+            </div>
+
+            {/* BIO */}
+            <div className="md:col-span-2">
+              <label className="block mb-2 text-sm font-medium">
+                Biography
+              </label>
+
+              <div className="relative">
+                <FileText
                   size={18}
                   className="absolute left-4 top-5 text-gray-400"
                 />
 
                 <textarea
-                  name="address"
-                  rows="4"
-                  placeholder="Enter full address..."
-                  value={formData.address}
+                  rows={6}
+                  name="bio"
+                  value={formData.bio}
                   onChange={handleChange}
-                  className="w-full pl-11 pr-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-black resize-none"
+                  placeholder="Write member biography..."
+                  className="w-full pl-11 pr-4 py-3 border rounded-xl resize-none"
                 />
-
               </div>
-
             </div>
 
-            {/* Buttons */}
-            <div className="md:col-span-2 flex justify-end gap-4 mt-2">
+            {/* FEATURED MEMBER */}
+            <div className="md:col-span-2">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="featured"
+                  checked={formData.featured}
+                  onChange={handleChange}
+                  className="w-5 h-5"
+                />
+
+                <span>
+                  Featured Member (Chairman / Highlighted Member)
+                </span>
+              </label>
+            </div>
+
+            {/* BUTTONS */}
+            <div className="md:col-span-2 flex justify-end gap-4">
 
               <button
                 type="button"
-                className="px-6 py-3 border rounded-xl hover:bg-gray-100 transition"
+                className="px-6 py-3 border rounded-xl"
               >
                 Cancel
               </button>
 
               <button
                 type="submit"
-                className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-xl hover:bg-gray-800 transition"
+                className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-xl"
               >
                 <Save size={18} />
-                Save Staff
+                Save Member
               </button>
 
             </div>

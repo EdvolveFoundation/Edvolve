@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 
+
 const boardOfTrustees = [
   {
     fullName: "Prof. Vincent A. Asuru, MNAE, MNIM, KSM, KSS, JP.",
@@ -23,26 +24,26 @@ const boardOfTrustees = [
     fullName: "Victor Chimenum Owhorji",
     role: "ED/Board Secretary",
     image: "/test9.png",
-    bio: "Victor Owhorji is a community organiser, social innovator, change advocate, and serves as Executive Director of Edvolve Foundation",
+  
   },
   {
     fullName: "Goodness Stephen Owhorji",
     role: "Board Member",
-    image: "/test16.png",
-    bio: "Goodness Owhorji is a purpose-driven professional with expertise in business development, administration, project coordination, and community development. ",
+    image: "/test19.png",
+   
   },
   {
     fullName: "Anietie Happiness Johnson",
     role: "Board Member",
-    image: "/test14.png",
-    bio: "Anietie Happiness Johnson is a data analysis expert with an engineering background and experience in sales, performance management, and virtual administration.",
+    image: "/test10.png",
+    
   },
 
   {
     fullName: "Chukwuma Banigo Wabara",
     role: "Board Member",
     image: "/test8.png",
-    bio: "Chukwuma Banigo Wabara is an IT enthusiast and seasoned business development professional with decades of experience. ",
+    
   },
 ];
 
@@ -51,26 +52,28 @@ const managementTeam = [
     fullName: "Eugenia Igwe",
     role: " Director of Programs",
     image: "/test11.PNG",
-    bio: " Program Director at Edvolve, where she leads the design, coordination, and implementation of programmes that advance education transformation, institutional growth, and human capital development.",
+    
   },
 
   {
     fullName: "Sandra Omosigho",
     role: "Director of Operations",
     image: "/test13.png",
-    bio: "She holds a First-Class degree in Microbiology, a Master's degree in Public Health Biotechnology, and is currently pursuing an MBA.",
+   
   },
 
   {
     fullName: "Partnership Lead",
     role: "Stakeholder Engagement",
     image: "/test12.jpg",
-    bio: "Manages strategic partnerships and collaborations.",
+    
   },
 
 ];
 
 export default function ManagementTeamPage() {
+
+
 
   return (
 
@@ -225,7 +228,7 @@ export default function ManagementTeamPage() {
               >
                 <div className="bg-white overflow-hidden shadow-xl">
 
-                  <div className="relative h-[450px] overflow-hidden">
+                  <div className="relative h-[280px] overflow-hidden">
                     <Image
                       src={member.image}
                       alt={member.fullName}
@@ -243,9 +246,7 @@ export default function ManagementTeamPage() {
                       {member.fullName}
                     </h3>
 
-                    <p className="text-[#5b4f50] mt-4 text-sm leading-7">
-                      {member.bio}
-                    </p>
+
                   </div>
 
                 </div>
@@ -281,15 +282,15 @@ export default function ManagementTeamPage() {
 
 
           <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-10">
-            {managementTeam.map((member) => (
+            {managementTeam.map((member, index) => (
               <motion.div
-                key={member._id}
+                key={index}
                 whileHover={{ y: -12 }}
                 className="group"
               >
                 <div className="bg-white overflow-hidden shadow-xl">
 
-                  <div className="relative h-[520px] overflow-hidden">
+                  <div className="relative h-[280px] overflow-hidden">
                     <Image
                       src={member.image || "/default.jpg"}
                       alt={member.fullName}
@@ -307,9 +308,7 @@ export default function ManagementTeamPage() {
                       {member.fullName}
                     </h3>
 
-                    <p className="text-[#5b4f50] mt-4">
-                      {member.bio}
-                    </p>
+                    
                   </div>
 
                 </div>
