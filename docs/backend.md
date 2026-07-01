@@ -10,8 +10,9 @@ Copy `.env.example` to `.env.local` locally, then set:
 - `AUTH_TRUST_HOST`: `true`
 - `DATABASE_URL`: PostgreSQL connection string
 - `ADMIN_EMAIL`: admin login email
-- `ADMIN_PASSWORD_HASH`: bcrypt hash of the admin password
 - `CLOUDINARY_URL`: Cloudinary API environment variable for admin uploads
+- `RESEND_API_KEY`: Resend API key used for admin verification emails
+- `RESEND_FROM`: verified Resend sender, for example `Edvolve Foundation <admin@edvolvefoundation.org>`
 
 Do not commit `.env.local`.
 
@@ -27,6 +28,8 @@ For Railway Postgres with the app hosted on Railway, set the app service `DATABA
 
 The schema creates tables for:
 
+- admin accounts
+- admin OTPs
 - blogs
 - staff members
 - reports
@@ -36,7 +39,9 @@ The schema creates tables for:
 
 ## Authentication
 
-Admin auth uses Auth.js/NextAuth Credentials provider.
+Admin auth uses Auth.js/NextAuth Credentials provider with a database-backed admin password and email OTP verification.
+
+Only `ADMIN_EMAIL` can authenticate. On first use, the admin creates a password and confirms it with a 6-character alphanumeric OTP sent by Resend. Every later login verifies email and password first, then sends a fresh OTP before creating the session. Password reset uses the same Resend OTP flow. Admin sessions expire after 24 hours.
 
 Routes under `/admin/*` are protected by `src/proxy.js`.
 Admin API mutations call `requireAdminSession()` before changing data.
@@ -55,6 +60,15 @@ Public submissions:
 
 - `POST /api/contact`
 - `POST /api/registrations`
+
+Admin auth flow:
+
+- `GET /api/admin/auth/status`
+- `POST /api/admin/auth/setup/request`
+- `POST /api/admin/auth/setup/verify`
+- `POST /api/admin/auth/login/request-otp`
+- `POST /api/admin/auth/password-reset/request`
+- `POST /api/admin/auth/password-reset/verify`
 
 Admin-only reads/mutations:
 
@@ -88,7 +102,7 @@ Admin uploads use Cloudinary through `POST /api/uploads`. Image and PDF uploads 
 - Uploads: Cloudinary
 - DNS: managed at Go54/Ugohost
 
-Use Railway service variables for `DATABASE_URL`, `AUTH_SECRET`, `AUTH_TRUST_HOST`, `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`, and `CLOUDINARY_URL`. Only DNS records for the custom domain need to be sent to Go54/Ugohost after the Railway domain is added.
+Use Railway service variables for `DATABASE_URL`, `AUTH_SECRET`, `AUTH_TRUST_HOST`, `ADMIN_EMAIL`, `CLOUDINARY_URL`, `RESEND_API_KEY`, and `RESEND_FROM`. Only DNS records for the custom domain need to be sent to Go54/Ugohost after the Railway domain is added.
 
 Railway deployment uses Next.js standalone output:
 

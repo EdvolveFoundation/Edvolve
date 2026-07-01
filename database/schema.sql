@@ -1,3 +1,28 @@
+create table if not exists admin_accounts (
+  email text primary key,
+  password_hash text not null,
+  password_set_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists admin_otps (
+  id text primary key,
+  email text not null,
+  purpose text not null check (
+    purpose in ('login', 'setup', 'password_reset')
+  ),
+  code_hash text not null,
+  password_hash text,
+  attempts integer not null default 0,
+  expires_at timestamptz not null,
+  consumed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists admin_otps_email_purpose_idx
+on admin_otps (email, purpose, created_at desc);
+
 create table if not exists blogs (
   id text primary key,
   slug text not null unique,
@@ -115,4 +140,9 @@ for each row execute function set_updated_at();
 drop trigger if exists registrations_set_updated_at on registrations;
 create trigger registrations_set_updated_at
 before update on registrations
+for each row execute function set_updated_at();
+
+drop trigger if exists admin_accounts_set_updated_at on admin_accounts;
+create trigger admin_accounts_set_updated_at
+before update on admin_accounts
 for each row execute function set_updated_at();

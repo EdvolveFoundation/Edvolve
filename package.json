@@ -23,6 +23,7 @@
     "react-intersection-observer": "^10.0.3",
     "react-webcam": "^7.2.0",
     "recharts": "^3.8.1",
+    "resend": "^6.16.0",
     "swiper": "^12.2.0",
     "zod": "^4.4.3"
   },
