@@ -106,11 +106,7 @@ export default function Navbar() {
     const [isSticky, setIsSticky] = useState(false)
     const [mobileAboutOpen, setMobileAboutOpen] = useState(false)
     const [mobileServicesOpen, setMobileServicesOpen] = useState(false)
-    const [navLoaded, setNavLoaded] = useState(false);
-
-    useEffect(() => {
-        setNavLoaded(true);
-    }, []);
+    const navLoaded = true;
 
 
 

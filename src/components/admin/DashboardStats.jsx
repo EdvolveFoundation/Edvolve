@@ -4,8 +4,9 @@ export default function DashboardStats({
   stats = {
     blogs: 0,
     staffs: 0,
-    messages: 12,
-    events: 45,
+    messages: 0,
+    events: 0,
+    registrations: 0,
   },
 }) {
 
@@ -14,10 +15,11 @@ export default function DashboardStats({
   { title: "Staffs", value: stats.staffs ?? 0 },
   { title: "Messages", value: stats.messages ?? 0 },
   { title: "Events", value: stats.events ?? 0 },
+  { title: "Registrations", value: stats.registrations ?? 0 },
 ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
       {cards.map((card) => (
         <div
           key={card.title}

@@ -5,12 +5,10 @@ import { usePathname } from "next/navigation";
 
 import {
   LayoutDashboard,
-  Calendar,
   FileText,
   Users,
   Mail,
-  Image,
-   CalendarDays,
+  CalendarDays,
   ScrollText,
 } from "lucide-react";
 
@@ -48,7 +46,12 @@ const links = [
   name: "Reports",
   href: "/admin/ReportPage",
   icon: FileText,
-}
+},
+{
+  name: "Registrations",
+  href: "/admin/registrations",
+  icon: ScrollText,
+},
 
 
 

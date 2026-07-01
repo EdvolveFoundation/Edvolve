@@ -273,7 +273,7 @@ export default function ManagementTeamPage() {
             </h2>
 
             <p className="text-gray-600 text-lg">
-              Professionals driving Edvolve Foundation's mission forward.
+              Professionals driving Edvolve Foundation&apos;s mission forward.
             </p>
           </div>
 

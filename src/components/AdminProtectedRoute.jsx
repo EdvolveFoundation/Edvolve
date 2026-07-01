@@ -1,49 +1,23 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-} from "react";
-
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export default function AdminProtectedRoute({
   children,
 }) {
 
   const router = useRouter();
-
-  const [authorized,setAuthorized] =
-    useState(false);
-
-  const [loading,setLoading] =
-    useState(true);
-
-  useEffect(() => {
-
-    const auth =
-      localStorage.getItem(
-        "adminAuth"
-      );
-
-    if(!auth){
-
-      router.replace(
-        "/admin/login"
-      );
-
-      return;
-    }
-
-    setAuthorized(true);
-
-    setLoading(false);
-
-  }, [router]);
+  const { status } = useSession({
+    required: true,
+    onUnauthenticated() {
+      router.replace("/admin/login");
+    },
+  });
 
   /* Prevent flash */
 
-  if(loading){
+  if(status === "loading"){
 
     return (
 
@@ -68,12 +42,6 @@ export default function AdminProtectedRoute({
       </div>
 
     );
-
-  }
-
-  if(!authorized){
-
-    return null;
 
   }
 

@@ -1,10 +1,12 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import UploadField from "@/components/admin/UploadField";
 
 export default function EditBlogPage() {
   const { id } = useParams();
+  const router = useRouter();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -13,11 +15,56 @@ export default function EditBlogPage() {
     image: "",
     content: "",
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    // Replace with API call later
+    let isMounted = true;
 
-    setFormData(blog);
+    async function loadBlog() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const response = await fetch(`/api/blogs/${id}`);
+
+        if (!response.ok) {
+          throw new Error("Unable to load blog.");
+        }
+
+        const data = await response.json();
+        const blog = data.blog;
+
+        if (!isMounted) {
+          return;
+        }
+
+        setFormData({
+          title: blog.title || "",
+          category: blog.category || "",
+          author: blog.author || "",
+          image: blog.image || "",
+          content: (blog.introduction || []).join("\n"),
+        });
+      } catch (loadError) {
+        if (isMounted) {
+          setError(loadError.message);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    if (id) {
+      loadBlog();
+    }
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   const handleChange = (e) => {
@@ -27,12 +74,37 @@ export default function EditBlogPage() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setIsSubmitting(true);
 
-    console.log("Updated Blog:", formData);
+    try {
+      const response = await fetch(`/api/blogs/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          category: formData.category,
+          author: formData.author,
+          image: formData.image,
+          introduction: formData.content,
+        }),
+      });
 
-    // PUT request goes here later
+      if (!response.ok) {
+        throw new Error("Unable to update blog.");
+      }
+
+      router.push("/admin/blog");
+      router.refresh();
+    } catch (submitError) {
+      setError(submitError.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -40,6 +112,18 @@ export default function EditBlogPage() {
       <h1 className="text-3xl font-bold mb-8">
         Edit Blog Post
       </h1>
+
+      {error && (
+        <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-700">
+          {error}
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="mb-6 rounded-lg bg-white p-4 text-gray-500">
+          Loading blog...
+        </div>
+      )}
 
       <form
         onSubmit={handleSubmit}
@@ -85,15 +169,16 @@ export default function EditBlogPage() {
         </div>
 
         <div>
-          <label className="block mb-2 font-medium">
-            Featured Image
-          </label>
-          <input
-            type="text"
-            name="image"
+          <UploadField
+            label="Featured Image"
             value={formData.image}
-            onChange={handleChange}
-            className="w-full border rounded-lg p-3"
+            onChange={(value) =>
+              setFormData((prev) => ({
+                ...prev,
+                image: value,
+              }))
+            }
+            folder="edvolve/blogs"
           />
         </div>
 
@@ -120,9 +205,10 @@ export default function EditBlogPage() {
 
         <button
           type="submit"
+          disabled={isSubmitting || isLoading}
           className="bg-[#cebf3e] text-white px-6 py-3 rounded-lg"
         >
-          Update Blog
+          {isSubmitting ? "Updating..." : "Update Blog"}
         </button>
       </form>
     </div>

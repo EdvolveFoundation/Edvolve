@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { signOut, useSession } from "next-auth/react";
 import {
     Bell,
     ChevronDown,
@@ -14,11 +15,12 @@ export default function AdminNavbar() {
 
     const notificationRef = useRef(null);
     const profileRef = useRef(null);
+    const { data: session } = useSession();
     const [open, setOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
 
-    const [adminName, setAdminName] =
-        useState("Admin");
+    const adminName =
+        session?.user?.name || "Admin";
 
     const [notifications, setNotifications] =
         useState([
@@ -44,17 +46,6 @@ export default function AdminNavbar() {
                 read: true,
             },
         ]);
-
-    useEffect(() => {
-        const storedAdmin = JSON.parse(
-            localStorage.getItem("adminAuth") ||
-            "{}"
-        );
-
-        if (storedAdmin?.name) {
-            setAdminName(storedAdmin.name);
-        }
-    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -108,13 +99,10 @@ export default function AdminNavbar() {
         );
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem(
-            "adminAuth"
-        );
-
-        window.location.href =
-            "/admin/login";
+    const handleLogout = async () => {
+        await signOut({
+            callbackUrl: "/admin/login",
+        });
     };
 
     return (

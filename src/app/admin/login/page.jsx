@@ -1,163 +1,74 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Webcam from "react-webcam";
-
+import { signIn } from "next-auth/react";
 import {
-    Mail,
-    Lock,
-    Eye,
-    EyeOff,
-    Camera,
-    CheckCircle2,
-    X,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
 } from "lucide-react";
 
 export default function AdminLoginPage() {
+  const router = useRouter();
 
-    const router = useRouter();
+  const [showPassword, setShowPassword] =
+    useState(false);
+  const [isSubmitting, setIsSubmitting] =
+    useState(false);
+  const [error, setError] = useState("");
 
-    const webcamRef = useRef(null);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
 
-    const [showPassword, setShowPassword] =
-        useState(false);
+  const handleChange = (event) => {
+    setFormData((prev) => ({
+      ...prev,
+      [event.target.name]: event.target.value,
+    }));
+  };
 
-    const [showCamera, setShowCamera] =
-        useState(false);
-
-    const [selfie, setSelfie] =
-        useState(null);
-
-    const [formData, setFormData] =
-        useState({
-            email: "",
-            password: "",
-        });
-
-    /* INPUT CHANGE */
-
-    const handleChange = (e) => {
-
-        setFormData({
-            ...formData,
-            [e.target.name]:
-                e.target.value,
-        });
-
-    };
-
-    const openCamera = async () => {
-
-  try {
-
-    await navigator.mediaDevices
-      .getUserMedia({
-        video:{
-          facingMode:"user"
-        }
-      });
-
-    setShowCamera(true);
-
-  } catch(err){
-
-    alert(
-      "Camera access denied."
+  const getCallbackUrl = () => {
+    const params = new URLSearchParams(
+      window.location.search
     );
 
-    console.error(err);
+    return params.get("callbackUrl") || "/admin";
+  };
 
-  }
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError("");
+    setIsSubmitting(true);
 
-};
-
-    /* CAPTURE SELFIE */
-
-    const captureSelfie = () => {
-
-        const image =
-            webcamRef.current
-                ?.getScreenshot();
-
-        if (!image) {
-
-            alert(
-                "Unable to capture selfie."
-            );
-
-            return;
-        }
-
-        setSelfie(image);
-
-        setShowCamera(false);
-    };
-
-    /* LOGIN */
-
-    const handleSubmit = async (e) => {
-
-        e.preventDefault();
-
-        if (!selfie) {
-
-            alert(
-                "You must take a selfie before login."
-            );
-
-            return;
-        }
-
-        if (
-            formData.email ===
-            "admin@gadiel.com" &&
-
-            formData.password ===
-            "admin123"
-        ) {
-
-            localStorage.setItem(
-                "adminAuth",
-                "true"
-            );
-
-            /*
-              Later:
-              upload selfie
-              save to DB
-            */
-
-            router.push("/admin");
-
-            return;
-        }
-
-        alert(
-            "Invalid credentials."
-        );
-    };
-
-
-    useEffect(() => {
-
-  const loggedIn =
-    localStorage.getItem(
-      "adminAuth"
+    const response = await signIn(
+      "credentials",
+      {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+        callbackUrl: getCallbackUrl(),
+      }
     );
 
-  if(loggedIn){
+    setIsSubmitting(false);
 
-    router.push("/admin");
+    if (!response || response.error) {
+      setError("Invalid email or password.");
+      return;
+    }
 
-  }
+    router.replace(response.url || "/admin");
+    router.refresh();
+  };
 
-}, []);
-
-    return (
-
-        <div
-            className="
+  return (
+    <main
+      className="
         relative
         min-h-screen
         flex
@@ -167,30 +78,18 @@ export default function AdminLoginPage() {
         bg-cover
         bg-center
       "
-            style={{
-                backgroundImage:
-                    "url('/edu1.jpeg')",
-            }}
-        >
+      style={{
+        backgroundImage: "url('/edu1.jpeg')",
+      }}
+    >
+      <div className="absolute inset-0 bg-black/75" />
 
-            {/* BLACK OVERLAY */}
-
-            <div className="
-        absolute
-        inset-0
-        bg-black/75
-      " />
-
-            {/* LOGIN CARD */}
-
-            <div className="
-        relative
-        z-10
-        w-full
-        max-w-md
-      ">
-
-                <div className="
+      <section
+        className="
+          relative
+          z-10
+          w-full
+          max-w-md
           bg-white/10
           backdrop-blur-xl
           border
@@ -199,406 +98,175 @@ export default function AdminLoginPage() {
           shadow-2xl
           overflow-hidden
           text-white
-        ">
+        "
+      >
+        <div className="p-8 text-center">
+          <h1 className="text-4xl font-bold">
+            Edvolve Admin
+          </h1>
 
-                    {/* HEADER */}
+          <p className="text-gray-300 mt-3">
+            Secure Dashboard Access
+          </p>
+        </div>
 
-                    <div className="
-            p-8
-            text-center
-          ">
-
-                        <h1 className="
-              text-4xl
-              font-bold
-            ">
-                            Gadiel Admin
-                        </h1>
-
-                        <p className="
-              text-gray-300
-              mt-3
-            ">
-                            Secure Dashboard Access
-                        </p>
-
-                    </div>
-
-                    {/* FORM */}
-
-                    <form
-                        onSubmit={handleSubmit}
-                        className="
-              px-8
-              pb-8
-              space-y-5
-            "
-                    >
-
-                        {/* EMAIL */}
-
-                        <div>
-
-                            <label className="
-                block
-                mb-2
-                text-sm
-                text-gray-200
-              ">
-                                Email Address
-                            </label>
-
-                            <div className="
-                relative
-              ">
-
-                                <Mail
-                                    size={18}
-                                    className="
-                    absolute
-                    left-4
-                    top-1/2
-                    -translate-y-1/2
-                    text-gray-400
-                  "
-                                />
-
-                                <input
-                                    type="email"
-                                    name="email"
-                                    required
-                                    value={
-                                        formData.email
-                                    }
-                                    onChange={
-                                        handleChange
-                                    }
-                                    placeholder="
-                    admin@gadiel.com
-                  "
-                                    className="
-                    w-full
-                    bg-white/10
-                    border
-                    border-white/20
-                    rounded-xl
-                    pl-11
-                    pr-4
-                    py-3
-                    text-white
-                    placeholder:text-gray-400
-                    outline-none
-                    focus:ring-2
-                    focus:ring-white
-                  "
-                                />
-
-                            </div>
-
-                        </div>
-
-                        {/* PASSWORD */}
-
-                        <div>
-
-                            <label className="
-                block
-                mb-2
-                text-sm
-                text-gray-200
-              ">
-                                Password
-                            </label>
-
-                            <div className="
-                relative
-              ">
-
-                                <Lock
-                                    size={18}
-                                    className="
-                    absolute
-                    left-4
-                    top-1/2
-                    -translate-y-1/2
-                    text-gray-400
-                  "
-                                />
-
-                                <input
-                                    type={
-                                        showPassword
-                                            ? "text"
-                                            : "password"
-                                    }
-                                    name="password"
-                                    required
-                                    value={
-                                        formData.password
-                                    }
-                                    onChange={
-                                        handleChange
-                                    }
-                                    placeholder="
-                    ••••••••
-                  "
-                                    className="
-                    w-full
-                    bg-white/10
-                    border
-                    border-white/20
-                    rounded-xl
-                    pl-11
-                    pr-12
-                    py-3
-                    text-white
-                    placeholder:text-gray-400
-                    outline-none
-                    focus:ring-2
-                    focus:ring-white
-                  "
-                                />
-
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setShowPassword(
-                                            !showPassword
-                                        )
-                                    }
-                                    className="
-                    absolute
-                    right-4
-                    top-1/2
-                    -translate-y-1/2
-                    text-gray-400
-                  "
-                                >
-
-                                    {
-                                        showPassword
-                                            ? <EyeOff size={18} />
-                                            : <Eye size={18} />
-                                    }
-
-                                </button>
-
-                            </div>
-
-                        </div>
-
-                        {/* SELFIE BUTTON */}
-
-                        <button
-                            type="button"
-                           onClick={openCamera}
-                            className={`
-                w-full
-                py-3
-                rounded-xl
-                font-semibold
+        <form
+          onSubmit={handleSubmit}
+          className="px-8 pb-8 space-y-5"
+        >
+          {error && (
+            <div
+              className="
                 flex
                 items-center
-                justify-center
-                gap-2
-                transition
-
-                ${selfie
-                                    ? `
-                    bg-[#aa9e31]
-                    text-white
-                  `
-                                    : `
-                    bg-yellow-400
-                    text-black
-                    hover:bg-yellow-300
-                  `
-                                }
-              `}
-                        >
-
-                            {
-                                selfie
-                                    ? <CheckCircle2 size={18} />
-                                    : <Camera size={18} />
-                            }
-
-                            {
-                                selfie
-                                    ? "Selfie Captured"
-                                    : "Take Selfie"
-                            }
-
-                        </button>
-
-                        {/* PREVIEW */}
-
-                        {selfie && (
-
-                            <div className="
-                flex
-                justify-center
-              ">
-
-                                <img
-                                    src={selfie}
-                                    alt="Selfie"
-                                    className="
-                    w-28
-                    h-28
-                    rounded-full
-                    border-4
-                    border-white/30
-                    object-cover
-                  "
-                                />
-
-                            </div>
-
-                        )}
-
-                        {/* LOGIN BUTTON */}
-
-                        <button
-                            type="submit"
-                            className="
-                w-full
-                bg-white
-                text-black
-                py-3
+                gap-3
                 rounded-xl
-                font-semibold
-                hover:bg-gray-200
-                transition
+                border
+                border-red-300/40
+                bg-red-500/15
+                p-4
+                text-sm
+                text-red-100
               "
-                        >
-                            Login
-                        </button>
-
-                    </form>
-
-                </div>
-
+            >
+              <AlertCircle size={18} />
+              {error}
             </div>
+          )}
 
-            {/* CAMERA MODAL */}
+          <div>
+            <label className="block mb-2 text-sm text-gray-200">
+              Email Address
+            </label>
 
-            {showCamera && (
-
-                <div className="
-          fixed
-          inset-0
-          bg-black/85
-          z-50
-          flex
-          items-center
-          justify-center
-          p-6
-        ">
-
-                    <div className="
-            bg-white
-            rounded-3xl
-            p-6
-            max-w-xl
-            w-full
-            shadow-2xl
-          ">
-
-                        {/* MODAL HEADER */}
-
-                        <div className="
-              flex
-              justify-between
-              items-center
-              mb-5
-            ">
-
-                            <div>
-
-                                <h2 className="
-                  text-2xl
-                  font-bold
-                ">
-                                    Identity Verification
-                                </h2>
-
-                                <p className="
-                  text-gray-500
-                  mt-1
-                ">
-                                    Take a selfie to continue login.
-                                </p>
-
-                            </div>
-
-                            <button
-                                onClick={() =>
-                                    setShowCamera(false)
-                                }
-                                className="
-                  p-2
-                  rounded-lg
-                  hover:bg-gray-100
+            <div className="relative">
+              <Mail
+                size={18}
+                className="
+                  absolute
+                  left-4
+                  top-1/2
+                  -translate-y-1/2
+                  text-gray-400
                 "
-                            >
+              />
 
-                                <X size={20} />
+              <input
+                type="email"
+                name="email"
+                required
+                value={formData.email}
+                onChange={handleChange}
+                autoComplete="email"
+                placeholder="admin@edvolvefoundation.org"
+                className="
+                  w-full
+                  bg-white/10
+                  border
+                  border-white/20
+                  rounded-xl
+                  pl-11
+                  pr-4
+                  py-3
+                  text-white
+                  placeholder:text-gray-400
+                  outline-none
+                  focus:ring-2
+                  focus:ring-white
+                "
+              />
+            </div>
+          </div>
 
-                            </button>
+          <div>
+            <label className="block mb-2 text-sm text-gray-200">
+              Password
+            </label>
 
-                        </div>
+            <div className="relative">
+              <Lock
+                size={18}
+                className="
+                  absolute
+                  left-4
+                  top-1/2
+                  -translate-y-1/2
+                  text-gray-400
+                "
+              />
 
-                        {/* CAMERA */}
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                required
+                value={formData.password}
+                onChange={handleChange}
+                autoComplete="current-password"
+                placeholder="Password"
+                className="
+                  w-full
+                  bg-white/10
+                  border
+                  border-white/20
+                  rounded-xl
+                  pl-11
+                  pr-12
+                  py-3
+                  text-white
+                  placeholder:text-gray-400
+                  outline-none
+                  focus:ring-2
+                  focus:ring-white
+                "
+              />
 
-                        <Webcam
-                            ref={webcamRef}
-                            screenshotFormat="image/jpeg"
-                            mirrored={true}
-                            audio={false}
+              <button
+                type="button"
+                onClick={() =>
+                  setShowPassword((value) => !value)
+                }
+                className="
+                  absolute
+                  right-4
+                  top-1/2
+                  -translate-y-1/2
+                  text-gray-400
+                "
+                aria-label={
+                  showPassword
+                    ? "Hide password"
+                    : "Show password"
+                }
+              >
+                {showPassword ? (
+                  <EyeOff size={18} />
+                ) : (
+                  <Eye size={18} />
+                )}
+              </button>
+            </div>
+          </div>
 
-                            videoConstraints={{
-                                width: 1280,
-                                height: 720,
-
-                                facingMode: "user"
-                            }}
-
-                            className="
-    rounded-2xl
-    w-full
-  "
-                        />
-
-                        {/* ACTION */}
-
-                        <button
-                            onClick={
-                                captureSelfie
-                            }
-                            className="
-                w-full
-                mt-5
-                bg-black
-                text-white
-                py-3
-                rounded-xl
-                font-semibold
-                hover:bg-gray-800
-                transition
-              "
-                        >
-
-                            Capture Selfie
-
-                        </button>
-
-                    </div>
-
-                </div>
-
-            )}
-
-        </div>
-    );
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="
+              w-full
+              bg-white
+              text-black
+              py-3
+              rounded-xl
+              font-semibold
+              hover:bg-gray-200
+              transition
+              disabled:cursor-not-allowed
+              disabled:opacity-70
+            "
+          >
+            {isSubmitting ? "Signing in..." : "Login"}
+          </button>
+        </form>
+      </section>
+    </main>
+  );
 }

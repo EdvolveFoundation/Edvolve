@@ -18,10 +18,11 @@ import {
 
 export default function DashboardCharts({
   stats = {
-  blogs: 10,
-  staffs: 5,
-  messages: 12,
-  events: 4
+  blogs: 0,
+  staffs: 0,
+  messages: 0,
+  events: 0,
+  registrations: 0,
 }
 }) {
 
@@ -41,6 +42,10 @@ export default function DashboardCharts({
     {
       name: "Events",
       value: Number(stats.events || 0),
+    },
+    {
+      name: "Registrations",
+      value: Number(stats.registrations || 0),
     },
   ];
 
@@ -72,10 +77,6 @@ export default function DashboardCharts({
   const hasData = analyticsData.some(
     (item) => item.value > 0
   );
-
-  console.log("Analytics Data:", analyticsData);
-  console.log("stats:", stats);
-  console.log("analyticsData:", analyticsData);
 
   return (
     <div className="grid lg:grid-cols-3 gap-6">
@@ -139,13 +140,13 @@ export default function DashboardCharts({
                 <Legend />
 
                 <defs>
-                  <linearGradient id="bookingGradient" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="blogGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#5B5FEF" stopOpacity={0.8} />
                     <stop offset="50%" stopColor="#CA5BAB" stopOpacity={0.4} />
                     <stop offset="95%" stopColor="#5B5FEF" stopOpacity={0.05} />
                   </linearGradient>
 
-                  <linearGradient id="inquiryGradient" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="messageGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#F87171" stopOpacity={0.8} />
                     <stop offset="50%" stopColor="#F59E0B" stopOpacity={0.4} />
                     <stop offset="95%" stopColor="#F87171" stopOpacity={0.05} />
