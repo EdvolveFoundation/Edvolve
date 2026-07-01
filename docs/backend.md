@@ -96,3 +96,9 @@ Railway deployment uses Next.js standalone output:
 npm run build
 npm start
 ```
+
+The checked-in app assets are large enough that `railway up` from the project root can time out on slow networks. For CLI deploys, use the small Docker context instead:
+
+```bash
+railway up deploy/railway --path-as-root --service edvolve-web
+```
