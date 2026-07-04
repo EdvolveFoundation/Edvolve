@@ -2,8 +2,17 @@ import "./globals.css";
 import LayoutWrapper from "@/components/LayoutWrapper";
 
 export const metadata = {
-  title: "Event Decoration",
-  description: "Professional Event Decoration Services",
+  title: {
+    default: "Edvolve Foundation",
+    template: "%s | Edvolve Foundation",
+  },
+  description:
+    "Edvolve Foundation discovers, supports, and facilitates solutions for education, human capital development, social change, and sustainable communities.",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-icon.png",
+  },
 };
 
 export default function RootLayout({ children }) {
