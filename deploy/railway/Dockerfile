@@ -5,6 +5,7 @@ RUN apk add --no-cache git
 WORKDIR /app
 
 ARG GIT_REF=main
+ADD https://api.github.com/repos/EdvolveFoundation/Edvolve/git/refs/heads/main /tmp/git-ref.json
 RUN git clone --depth=1 --branch "${GIT_REF}" https://github.com/EdvolveFoundation/Edvolve.git .
 
 ENV NEXT_TELEMETRY_DISABLED=1
