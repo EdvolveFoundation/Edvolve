@@ -60,7 +60,7 @@ export default function StatsSection() {
               </span>
 
               {/* Label */}
-              <h3 className="relative z-10 text-center text-sm sm:text-base md:text-2xl font-serif leading-snug transition-all duration-500 group-hover:text-[#c2b439]">
+              <h3 className="relative z-10 text-center text-sm sm:text-base md:text-2xl text-white/60 font-serif leading-snug transition-all duration-500 group-hover:text-[#c2b439]">
                 {stat.label}
               </h3>
             </div>
