@@ -223,7 +223,7 @@ text-lg
 leading-9
 ">
 
-The success of a student in today's competitive world requires
+The success of a student in today&apos;s competitive world requires
 more than academic qualifications. It requires confidence,
 practical knowledge, skills, mentorship, and the ability to
 identify opportunities and create solutions.

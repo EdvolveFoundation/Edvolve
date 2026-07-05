@@ -1,11 +1,49 @@
 "use client";
 
 import MessagesTable from "@/components/admin/MessagesTable";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 
 export default function MessagesPage() {
   const [contacts, setContacts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadMessages() {
+      try {
+        const response = await fetch("/api/contact", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error("Unable to load messages.");
+        }
+
+        const data = await response.json();
+
+        if (isMounted) {
+          setContacts(data.contacts || []);
+        }
+      } catch (loadError) {
+        if (isMounted) {
+          setError(loadError.message);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadMessages();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const deleteMessage = async (id) => {
     const confirmDelete = window.confirm(
@@ -26,24 +64,34 @@ export default function MessagesPage() {
         throw new Error("Delete failed");
       }
 
-      // remove immediately from UI
       setContacts((prev) =>
         prev.filter(
           (message) => message._id !== id
         )
       );
-
-      alert("Message deleted successfully");
     } catch (error) {
-      console.error(error);
-      alert("Failed to delete message");
+      setError(error.message);
     }
   };
 
   return (
-    <MessagesTable
-      contacts={contacts}
-      onDelete={deleteMessage}
-    />
+    <>
+      {isLoading && (
+        <p className="mb-4 text-gray-500">
+          Loading messages...
+        </p>
+      )}
+
+      {error && (
+        <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-700">
+          {error}
+        </div>
+      )}
+
+      <MessagesTable
+        contacts={contacts}
+        onDelete={deleteMessage}
+      />
+    </>
   );
 }

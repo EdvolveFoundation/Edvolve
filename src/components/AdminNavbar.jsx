@@ -1,60 +1,87 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { signOut, useSession } from "next-auth/react";
 import {
     Bell,
     ChevronDown,
     Search,
     CheckCircle,
     LogOut,
+    RefreshCw,
 } from "lucide-react";
 
+function formatNotificationTime(value) {
+    if (!value) {
+        return "";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+
+    return new Intl.DateTimeFormat("en", {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+    }).format(date);
+}
 
 export default function AdminNavbar() {
 
     const notificationRef = useRef(null);
     const profileRef = useRef(null);
+    const { data: session, status } = useSession();
     const [open, setOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [notificationsLoading, setNotificationsLoading] = useState(false);
+    const [notificationsError, setNotificationsError] = useState("");
 
-    const [adminName, setAdminName] =
-        useState("Admin");
+    const adminName =
+        session?.user?.name || "Admin";
 
-    const [notifications, setNotifications] =
-        useState([
-            {
-                id: 1,
-                title: "New Blog Published",
-                message:
-                    "A new blog has been added successfully.",
-                read: false,
-            },
-            {
-                id: 2,
-                title: "New Event Created",
-                message:
-                    "Community Outreach event was created.",
-                read: false,
-            },
-            {
-                id: 3,
-                title: "New Message",
-                message:
-                    "A visitor submitted a contact form.",
-                read: true,
-            },
-        ]);
+    const loadNotifications = useCallback(async () => {
+        if (status !== "authenticated") {
+            return;
+        }
+
+        setNotificationsLoading(true);
+        setNotificationsError("");
+
+        try {
+            const response = await fetch("/api/admin/notifications?limit=20", {
+                cache: "no-store",
+            });
+
+            if (!response.ok) {
+                throw new Error("Unable to load notifications.");
+            }
+
+            const data = await response.json();
+
+            setNotifications(data.notifications || []);
+            setUnreadCount(Number(data.unreadCount || 0));
+        } catch (error) {
+            setNotificationsError(error.message);
+        } finally {
+            setNotificationsLoading(false);
+        }
+    }, [status]);
 
     useEffect(() => {
-        const storedAdmin = JSON.parse(
-            localStorage.getItem("adminAuth") ||
-            "{}"
-        );
-
-        if (storedAdmin?.name) {
-            setAdminName(storedAdmin.name);
+        if (status !== "authenticated") {
+            return undefined;
         }
-    }, []);
+
+        const timeoutId = window.setTimeout(loadNotifications, 0);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [loadNotifications, status]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -90,12 +117,34 @@ export default function AdminNavbar() {
         };
     }, []);
 
-    const unreadCount =
-        notifications.filter(
-            (item) => !item.read
-        ).length;
+    useEffect(() => {
+        if (open) {
+            const timeoutId = window.setTimeout(loadNotifications, 0);
 
-    const markAsRead = (id) => {
+            return () => window.clearTimeout(timeoutId);
+        }
+
+        return undefined;
+    }, [loadNotifications, open]);
+
+    const hasNotifications = notifications.length > 0;
+
+    const renderedNotifications = useMemo(
+        () =>
+            notifications.map((item) => ({
+                ...item,
+                timeLabel: formatNotificationTime(item.createdAt),
+            })),
+        [notifications]
+    );
+
+    const markAsRead = async (id) => {
+        const target = notifications.find((item) => item.id === id);
+
+        if (!target || target.read) {
+            return;
+        }
+
         setNotifications((prev) =>
             prev.map((item) =>
                 item.id === id
@@ -106,15 +155,53 @@ export default function AdminNavbar() {
                     : item
             )
         );
+        setUnreadCount((prev) => Math.max(prev - 1, 0));
+
+        try {
+            const response = await fetch(`/api/admin/notifications/${id}`, {
+                method: "PATCH",
+            });
+
+            if (!response.ok) {
+                throw new Error("Unable to update notification.");
+            }
+        } catch (error) {
+            setNotificationsError(error.message);
+            loadNotifications();
+        }
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem(
-            "adminAuth"
-        );
+    const markAllAsRead = async () => {
+        if (!unreadCount) {
+            return;
+        }
 
-        window.location.href =
-            "/admin/login";
+        setNotifications((prev) =>
+            prev.map((item) => ({
+                ...item,
+                read: true,
+            }))
+        );
+        setUnreadCount(0);
+
+        try {
+            const response = await fetch("/api/admin/notifications", {
+                method: "PATCH",
+            });
+
+            if (!response.ok) {
+                throw new Error("Unable to update notifications.");
+            }
+        } catch (error) {
+            setNotificationsError(error.message);
+            loadNotifications();
+        }
+    };
+
+    const handleLogout = async () => {
+        await signOut({
+            callbackUrl: "/admin/login",
+        });
     };
 
     return (
@@ -252,10 +339,47 @@ export default function AdminNavbar() {
                                 </span>
                             </div>
 
+                            <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-3">
+                                <button
+                                    type="button"
+                                    onClick={loadNotifications}
+                                    className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-[#572649]"
+                                >
+                                    <RefreshCw
+                                        size={15}
+                                        className={
+                                            notificationsLoading
+                                                ? "animate-spin"
+                                                : ""
+                                        }
+                                    />
+                                    Refresh
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={markAllAsRead}
+                                    disabled={!unreadCount}
+                                    className="text-sm font-semibold text-[#572649] disabled:cursor-not-allowed disabled:text-gray-300"
+                                >
+                                    Mark all read
+                                </button>
+                            </div>
+
+                            {notificationsError && (
+                                <div className="border-b border-red-100 bg-red-50 px-5 py-3 text-sm text-red-700">
+                                    {notificationsError}
+                                </div>
+                            )}
+
                             <div className="max-h-[400px] overflow-y-auto">
-                                {notifications.length >
-                                    0 ? (
-                                    notifications.map(
+                                {notificationsLoading &&
+                                !hasNotifications ? (
+                                    <div className="p-6 text-center text-gray-500">
+                                        Loading notifications...
+                                    </div>
+                                ) : hasNotifications ? (
+                                    renderedNotifications.map(
                                         (item) => (
                                             <div
                                                 key={item.id}
@@ -269,9 +393,20 @@ export default function AdminNavbar() {
                                                     }
                         `}
                                             >
-                                                <div className="flex justify-between">
-                                                    <div>
-                                                        <h4 className="font-semibold">
+                                                <div className="flex gap-4">
+                                                    <a
+                                                        href={
+                                                            item.href ||
+                                                            "/admin"
+                                                        }
+                                                        onClick={() =>
+                                                            markAsRead(
+                                                                item.id
+                                                            )
+                                                        }
+                                                        className="min-w-0 flex-1"
+                                                    >
+                                                        <h4 className="font-semibold text-gray-900">
                                                             {item.title}
                                                         </h4>
 
@@ -280,10 +415,21 @@ export default function AdminNavbar() {
                                                                 item.message
                                                             }
                                                         </p>
-                                                    </div>
+
+                                                        {item.timeLabel && (
+                                                            <p className="mt-2 text-xs font-medium uppercase tracking-wide text-gray-400">
+                                                                {
+                                                                    item.timeLabel
+                                                                }
+                                                            </p>
+                                                        )}
+                                                    </a>
 
                                                     {!item.read && (
                                                         <button
+                                                            type="button"
+                                                            aria-label="Mark notification as read"
+                                                            className="mt-1 h-8 w-8 shrink-0 rounded-full text-green-600 hover:bg-green-50 flex items-center justify-center"
                                                             onClick={() =>
                                                                 markAsRead(
                                                                     item.id
@@ -292,7 +438,6 @@ export default function AdminNavbar() {
                                                         >
                                                             <CheckCircle
                                                                 size={18}
-                                                                className="text-green-600"
                                                             />
                                                         </button>
                                                     )}

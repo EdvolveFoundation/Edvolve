@@ -47,6 +47,9 @@ const opportunities = [
 export default function RegisterPage() {
 
   const [selectedRole, setSelectedRole] = useState("Mentee");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [status, setStatus] = useState("");
+  const [error, setError] = useState("");
 
 
   const [formData, setFormData] = useState({
@@ -63,6 +66,44 @@ export default function RegisterPage() {
       ...formData,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus("");
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/registrations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          role: selectedRole,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Unable to submit registration.");
+      }
+
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        location: "",
+        message: "",
+      });
+      setStatus("Registration submitted successfully.");
+    } catch (submitError) {
+      setError(submitError.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
 
@@ -212,6 +253,7 @@ export default function RegisterPage() {
 
               <button
                 key={role}
+                type="button"
                 onClick={() => setSelectedRole(role)}
                 className={`
                                     rounded-full px-6 py-3 transition
@@ -234,9 +276,23 @@ export default function RegisterPage() {
           </div>
 
 
+          {status && (
+            <div className="mb-6 rounded-lg bg-green-50 p-4 text-green-700">
+              {status}
+            </div>
+          )}
+
+          {error && (
+            <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-700">
+              {error}
+            </div>
+          )}
 
 
-          <form className="grid gap-6 md:grid-cols-2">
+          <form
+            onSubmit={handleSubmit}
+            className="grid gap-6 md:grid-cols-2"
+          >
 
 
             <input
@@ -244,6 +300,7 @@ export default function RegisterPage() {
               placeholder="Full Name"
               value={formData.name}
               onChange={handleChange}
+              required
               className="rounded-lg border p-4"
             />
 
@@ -255,6 +312,7 @@ export default function RegisterPage() {
               placeholder="Email Address"
               value={formData.email}
               onChange={handleChange}
+              required
               className="rounded-lg border p-4"
             />
 
@@ -297,7 +355,8 @@ export default function RegisterPage() {
 
 
             <button
-              type="button"
+              type="submit"
+              disabled={isSubmitting}
               className="
                             md:col-span-2
                             bg-[#cca63c]
@@ -310,7 +369,9 @@ export default function RegisterPage() {
                             "
             >
 
-              Register as {selectedRole}
+              {isSubmitting
+                ? "Submitting..."
+                : `Register as ${selectedRole}`}
 
             </button>
 

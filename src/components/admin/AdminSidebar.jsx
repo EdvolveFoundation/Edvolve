@@ -1,16 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 
 import {
   LayoutDashboard,
-  Calendar,
   FileText,
   Users,
   Mail,
-  Image,
-   CalendarDays,
+  CalendarDays,
   ScrollText,
 } from "lucide-react";
 
@@ -48,15 +47,31 @@ const links = [
   name: "Reports",
   href: "/admin/ReportPage",
   icon: FileText,
-}
+},
+{
+  name: "Registrations",
+  href: "/admin/registrations",
+  icon: ScrollText,
+},
 
 
 
 ];
 
+function isActiveRoute(pathname, href) {
+  if (href === "/admin") {
+    return pathname === href;
+  }
+
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export default function AdminSidebar() {
 
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const adminIdentity =
+    session?.user?.email || session?.user?.name || "Admin";
 
   return (
     <aside className="
@@ -99,11 +114,7 @@ export default function AdminSidebar() {
 
           const Icon = link.icon;
 
-          const isActive =
-            pathname === link.href ||
-            pathname.startsWith(
-              `${link.href}/`
-            );
+          const isActive = isActiveRoute(pathname, link.href);
 
           return (
             <Link
@@ -187,8 +198,11 @@ export default function AdminSidebar() {
             Logged in as
           </p>
 
-          <h4 className="font-semibold mt-1">
-            Admin User
+          <h4
+            className="font-semibold mt-1 break-words text-sm leading-snug"
+            title={adminIdentity}
+          >
+            {adminIdentity}
           </h4>
 
         </div>

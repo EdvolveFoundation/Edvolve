@@ -9,16 +9,7 @@ export default function BlogTable({
   onDelete,
   onEdit,
 }) {
-
-
-
 const router = useRouter();
-
-const editBlog = (blog) => {
-  router.push(`/admin/blog/edit/${blog._id}`);
-};
-
-
 
   if (blogs.length === 0) {
     return (
@@ -59,12 +50,19 @@ const editBlog = (blog) => {
               >
                 <td className="p-4">
                   <div className="relative w-20 h-16 rounded overflow-hidden">
-                    <Image
-                      src={blog.image}
-                      alt={blog.title}
-                      fill
-                      className="object-cover"
-                    />
+                    {blog.image ? (
+                      <Image
+                        src={blog.image}
+                        alt={blog.title}
+                        fill
+                        unoptimized={blog.image.startsWith("http")}
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gray-100 text-xs text-gray-500">
+                        No image
+                      </div>
+                    )}
                   </div>
                 </td>
 

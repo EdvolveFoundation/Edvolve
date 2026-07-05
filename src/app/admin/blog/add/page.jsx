@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import UploadField from "@/components/admin/UploadField";
 
 export default function CreateBlogPage() {
   const router = useRouter();
@@ -24,14 +25,8 @@ export default function CreateBlogPage() {
       content: "",
     },
   ]);
-
-  const generateSlug = (title) => {
-    return title
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-");
-  };
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const handlePostChange = (field, value) => {
     setPost((prev) => ({
@@ -41,14 +36,21 @@ export default function CreateBlogPage() {
   };
 
   const updateSection = (index, field, value) => {
-    const updated = [...sections];
-    updated[index][field] = value;
-    setSections(updated);
+    setSections((prev) =>
+      prev.map((section, sectionIndex) =>
+        sectionIndex === index
+          ? {
+              ...section,
+              [field]: value,
+            }
+          : section
+      )
+    );
   };
 
   const addSection = () => {
-    setSections([
-      ...sections,
+    setSections((prev) => [
+      ...prev,
       {
         heading: "",
         image: "",
@@ -58,67 +60,46 @@ export default function CreateBlogPage() {
   };
 
   const removeSection = (index) => {
-    setSections(
-      sections.filter((_, i) => i !== index)
+    setSections((prev) =>
+      prev.filter((_, sectionIndex) => sectionIndex !== index)
     );
   };
 
-  const handleSubmit = () => {
-    const blogData = {
-      _id: Date.now().toString(),
+  const handleSubmit = async () => {
+    setError("");
+    setIsSubmitting(true);
 
-      slug: generateSlug(post.title),
+    try {
+      const response = await fetch("/api/blogs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: post.title,
+          image: post.image,
+          category: post.category,
+          author: post.author,
+          readTime: post.readTime,
+          tags: post.tags,
+          quote: post.quote,
+          introduction: post.introduction,
+          sections,
+        }),
+      });
 
-      title: post.title,
-      image: post.image,
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Unable to create blog.");
+      }
 
-      date: new Date().toLocaleDateString(),
-
-      category: post.category,
-
-      author: post.author,
-
-      readTime: post.readTime,
-
-      tags: post.tags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean),
-
-      quote: post.quote,
-
-      introduction: post.introduction
-        .split("\n")
-        .filter(Boolean),
-
-      sections: sections.map((section) => ({
-        heading: section.heading,
-
-        image: section.image,
-
-        content: section.content
-          .split("\n")
-          .filter(Boolean),
-      })),
-    };
-
-    const existingBlogs = JSON.parse(
-      localStorage.getItem("blogs") || "[]"
-    );
-
-    const updatedBlogs = [
-      ...existingBlogs,
-      blogData,
-    ];
-
-    localStorage.setItem(
-      "blogs",
-      JSON.stringify(updatedBlogs)
-    );
-
-    alert("Blog Created Successfully");
-
-    router.push("/admin/blog");
+      router.push("/admin/blog");
+      router.refresh();
+    } catch (submitError) {
+      setError(submitError.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -128,7 +109,12 @@ export default function CreateBlogPage() {
           Create Blog Post
         </h1>
 
-        {/* TITLE */}
+        {error && (
+          <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-700">
+            {error}
+          </div>
+        )}
+
         <div className="mb-5">
           <label className="block mb-2 font-medium">
             Blog Title
@@ -138,36 +124,24 @@ export default function CreateBlogPage() {
             type="text"
             value={post.title}
             onChange={(e) =>
-              handlePostChange(
-                "title",
-                e.target.value
-              )
+              handlePostChange("title", e.target.value)
             }
             className="w-full border rounded-lg p-3"
           />
         </div>
 
-        {/* FEATURED IMAGE */}
         <div className="mb-5">
-          <label className="block mb-2 font-medium">
-            Featured Image
-          </label>
-
-          <input
-            type="text"
-            placeholder="/blog-image.jpg"
+          <UploadField
+            label="Featured Image"
             value={post.image}
-            onChange={(e) =>
-              handlePostChange(
-                "image",
-                e.target.value
-              )
+            onChange={(value) =>
+              handlePostChange("image", value)
             }
-            className="w-full border rounded-lg p-3"
+            folder="edvolve/blogs"
+            placeholder="/blog-image.jpg or upload an image"
           />
         </div>
 
-        {/* CATEGORY */}
         <div className="mb-5">
           <label className="block mb-2 font-medium">
             Category
@@ -177,16 +151,12 @@ export default function CreateBlogPage() {
             type="text"
             value={post.category}
             onChange={(e) =>
-              handlePostChange(
-                "category",
-                e.target.value
-              )
+              handlePostChange("category", e.target.value)
             }
             className="w-full border rounded-lg p-3"
           />
         </div>
 
-        {/* AUTHOR */}
         <div className="mb-5">
           <label className="block mb-2 font-medium">
             Author
@@ -196,16 +166,12 @@ export default function CreateBlogPage() {
             type="text"
             value={post.author}
             onChange={(e) =>
-              handlePostChange(
-                "author",
-                e.target.value
-              )
+              handlePostChange("author", e.target.value)
             }
             className="w-full border rounded-lg p-3"
           />
         </div>
 
-        {/* READ TIME */}
         <div className="mb-5">
           <label className="block mb-2 font-medium">
             Read Time
@@ -216,16 +182,12 @@ export default function CreateBlogPage() {
             placeholder="5 min read"
             value={post.readTime}
             onChange={(e) =>
-              handlePostChange(
-                "readTime",
-                e.target.value
-              )
+              handlePostChange("readTime", e.target.value)
             }
             className="w-full border rounded-lg p-3"
           />
         </div>
 
-        {/* TAGS */}
         <div className="mb-5">
           <label className="block mb-2 font-medium">
             Tags
@@ -236,16 +198,12 @@ export default function CreateBlogPage() {
             placeholder="Education, Youth, Innovation"
             value={post.tags}
             onChange={(e) =>
-              handlePostChange(
-                "tags",
-                e.target.value
-              )
+              handlePostChange("tags", e.target.value)
             }
             className="w-full border rounded-lg p-3"
           />
         </div>
 
-        {/* QUOTE */}
         <div className="mb-5">
           <label className="block mb-2 font-medium">
             Featured Quote
@@ -255,16 +213,12 @@ export default function CreateBlogPage() {
             rows={4}
             value={post.quote}
             onChange={(e) =>
-              handlePostChange(
-                "quote",
-                e.target.value
-              )
+              handlePostChange("quote", e.target.value)
             }
             className="w-full border rounded-lg p-3"
           />
         </div>
 
-        {/* INTRODUCTION */}
         <div className="mb-8">
           <label className="block mb-2 font-medium">
             Introduction
@@ -275,10 +229,7 @@ export default function CreateBlogPage() {
             placeholder="One paragraph per line"
             value={post.introduction}
             onChange={(e) =>
-              handlePostChange(
-                "introduction",
-                e.target.value
-              )
+              handlePostChange("introduction", e.target.value)
             }
             className="w-full border rounded-lg p-3"
           />
@@ -311,19 +262,20 @@ export default function CreateBlogPage() {
               className="w-full border rounded-lg p-3 mb-4"
             />
 
-            <input
-              type="text"
-              placeholder="/section-image.jpg"
-              value={section.image}
-              onChange={(e) =>
-                updateSection(
-                  index,
-                  "image",
-                  e.target.value
-                )
-              }
-              className="w-full border rounded-lg p-3 mb-4"
-            />
+            <div className="mb-4">
+              <UploadField
+                value={section.image}
+                onChange={(value) =>
+                  updateSection(
+                    index,
+                    "image",
+                    value
+                  )
+                }
+                folder="edvolve/blog-sections"
+                placeholder="/section-image.jpg or upload an image"
+              />
+            </div>
 
             <textarea
               rows={6}
@@ -342,9 +294,7 @@ export default function CreateBlogPage() {
             {sections.length > 1 && (
               <button
                 type="button"
-                onClick={() =>
-                  removeSection(index)
-                }
+                onClick={() => removeSection(index)}
                 className="mt-4 bg-red-500 text-white px-4 py-2 rounded-lg"
               >
                 Remove Section
@@ -363,10 +313,12 @@ export default function CreateBlogPage() {
 
         <div>
           <button
+            type="button"
             onClick={handleSubmit}
-            className="bg-[#cebf3e] text-white px-8 py-4 rounded-lg"
+            disabled={isSubmitting}
+            className="bg-[#cebf3e] text-white px-8 py-4 rounded-lg disabled:opacity-70"
           >
-            Publish Blog
+            {isSubmitting ? "Publishing..." : "Publish Blog"}
           </button>
         </div>
       </div>

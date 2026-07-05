@@ -1,165 +1,249 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Trash2, Plus, Upload } from "lucide-react";
+import { Pencil, Plus, Trash2, X } from "lucide-react";
+import UploadField from "@/components/admin/UploadField";
+
+const emptyForm = {
+  title: "",
+  category: "",
+  date: "",
+  location: "",
+  image: "",
+  description: "",
+};
+
+function formatDateInput(value) {
+  if (!value) {
+    return "";
+  }
+
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+    return value.slice(0, 10);
+  }
+
+  return new Date(value).toISOString().slice(0, 10);
+}
 
 export default function AdminEventsPage() {
-
   const [events, setEvents] = useState([]);
+  const [form, setForm] = useState(emptyForm);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const [form, setForm] = useState({
-    title:"",
-    category:"",
-    date:"",
-    location:"",
-    image:"",
-    description:"",
-  });
+  useEffect(() => {
+    let isMounted = true;
 
-  function handleChange(e){
+    async function loadEvents() {
+      try {
+        const response = await fetch("/api/events", {
+          cache: "no-store",
+        });
 
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+        if (!response.ok) {
+          throw new Error("Unable to load events.");
+        }
 
-  }
+        const data = await response.json();
 
-  // IMAGE PICKER
+        if (isMounted) {
+          setEvents(data.events || []);
+        }
+      } catch (loadError) {
+        if (isMounted) {
+          setError(loadError.message);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
 
-  function handleImageUpload(e){
+    loadEvents();
 
-    const file = e.target.files[0];
-
-    if(!file) return;
-
-    const imageUrl =
-      URL.createObjectURL(file);
-
-    setForm({
-      ...form,
-      image:imageUrl,
-    });
-
-  }
-
-  function addEvent(e){
-
-    e.preventDefault();
-
-    if(
-      !form.title ||
-      !form.category ||
-      !form.image
-    ) return;
-
-    const newEvent = {
-      id:Date.now(),
-      ...form,
+    return () => {
+      isMounted = false;
     };
+  }, []);
 
-    setEvents([
-      newEvent,
-      ...events
-    ]);
-
-    setForm({
-      title:"",
-      category:"",
-      date:"",
-      location:"",
-      image:"",
-      description:"",
-    });
-
+  function handleChange(event) {
+    setForm((prev) => ({
+      ...prev,
+      [event.target.name]: event.target.value,
+    }));
   }
 
-  function deleteEvent(id){
+  function startEdit(event) {
+    setEditingEvent(event);
+    setForm({
+      title: event.title || "",
+      category: event.category || "",
+      date: formatDateInput(event.date),
+      location: event.location || "",
+      image: event.image || "",
+      description: event.description || "",
+    });
+    setError("");
+  }
 
-    setEvents(
+  function resetForm() {
+    setEditingEvent(null);
+    setForm(emptyForm);
+    setError("");
+  }
 
-      events.filter(
-        event => event.id !== id
-      )
+  async function saveEvent(event) {
+    event.preventDefault();
 
+    if (!form.title || !form.category) {
+      setError("Title and category are required.");
+      return;
+    }
+
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(
+        editingEvent ? `/api/events/${editingEvent._id}` : "/api/events",
+        {
+          method: editingEvent ? "PATCH" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(form),
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Unable to save event.");
+      }
+
+      const data = await response.json();
+
+      setEvents((prev) =>
+        editingEvent
+          ? prev.map((item) =>
+              item._id === editingEvent._id ? data.event : item
+            )
+          : [data.event, ...prev]
+      );
+      resetForm();
+    } catch (submitError) {
+      setError(submitError.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function deleteEvent(id) {
+    const confirmed = window.confirm("Delete this event?");
+
+    if (!confirmed) return;
+
+    const previousEvents = events;
+
+    setEvents((prev) =>
+      prev.filter((event) => event._id !== id)
     );
 
+    try {
+      const response = await fetch(`/api/events/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Unable to delete event.");
+      }
+
+      if (editingEvent?._id === id) {
+        resetForm();
+      }
+    } catch (deleteError) {
+      setEvents(previousEvents);
+      setError(deleteError.message);
+    }
   }
 
   return (
-
-    <main className="
-      bg-[#f7f4f1]
-      min-h-screen
-      py-20
-    ">
-
-      <div className="
-        max-w-[1500px]
-        mx-auto
-        px-6
-      ">
-
-        <h1 className="
-          font-serif
-          text-5xl
-          mb-16
-        ">
+    <main className="min-h-screen bg-[#f7f4f1] py-20">
+      <div className="mx-auto max-w-[1500px] px-6">
+        <h1 className="mb-6 font-serif text-5xl">
           Event Management
         </h1>
 
-        <div className="
-          grid
-          lg:grid-cols-[500px_1fr]
-          gap-16
-        ">
+        {isLoading && (
+          <p className="mb-6 text-gray-500">
+            Loading events...
+          </p>
+        )}
 
-          {/* FORM */}
+        {error && (
+          <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-700">
+            {error}
+          </div>
+        )}
 
-          <div className="
-            bg-white
-            p-10
-            shadow-sm
-          ">
+        <div className="grid gap-16 lg:grid-cols-[500px_1fr]">
+          <div className="bg-white p-10 shadow-sm">
+            <div className="mb-10 flex items-center justify-between gap-4">
+              <h2 className="font-serif text-3xl">
+                {editingEvent ? "Edit Event" : "Add Event"}
+              </h2>
 
-            <h2 className="
-              font-serif
-              text-3xl
-              mb-10
-            ">
-              Add Event
-            </h2>
+              {editingEvent && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="inline-flex items-center gap-2 rounded-lg border px-4 py-2"
+                >
+                  <X size={16} />
+                  Cancel
+                </button>
+              )}
+            </div>
 
             <form
-              onSubmit={addEvent}
+              onSubmit={saveEvent}
               className="space-y-6"
             >
-
               <input
                 name="title"
                 value={form.title}
                 onChange={handleChange}
                 placeholder="Event Title"
-                className="inputAdmin border border-gray-200 py-4 pl-3"
+                className="inputAdmin w-full border border-gray-200 py-4 pl-3"
               />
 
               <select
                 name="category"
                 value={form.category}
                 onChange={handleChange}
-                className="inputAdmin border border-gray-200 py-4 px-3 ml-2"
+                className="inputAdmin w-full border border-gray-200 bg-white px-3 py-4"
               >
-
                 <option value="">
                   Select Category
                 </option>
-
-                <option>Wedding</option>
-                <option>Corporate</option>
-                <option>Social</option>
-                <option>Memorial</option>
-
+                <option value="Education">
+                  Education
+                </option>
+                <option value="MSME Development">
+                  MSME Development
+                </option>
+                <option value="Agro Development">
+                  Agro Development
+                </option>
+                <option value="Outreach">
+                  Outreach
+                </option>
+                <option value="Partnership">
+                  Partnership
+                </option>
               </select>
 
               <input
@@ -167,7 +251,7 @@ export default function AdminEventsPage() {
                 name="date"
                 value={form.date}
                 onChange={handleChange}
-                className="inputAdmin border border-gray-200 py-4 px-3"
+                className="inputAdmin w-full border border-gray-200 px-3 py-4"
               />
 
               <input
@@ -175,67 +259,32 @@ export default function AdminEventsPage() {
                 value={form.location}
                 onChange={handleChange}
                 placeholder="Location"
-                className="inputAdmin border border-gray-200 py-4 pl-3 ml-2"
+                className="inputAdmin w-full border border-gray-200 py-4 pl-3"
               />
 
-              {/* FILE UPLOAD */}
-
-              <label className="
-                border-2
-                border-dashed
-                border-[#ddd]
-                p-8
-                cursor-pointer
-                block
-                text-center
-                hover:border-[#572649]
-                transition
-              ">
-
-                <Upload
-                  size={35}
-                  className="
-                    mx-auto
-                    mb-4
-                    text-[#572649]
-                  "
-                />
-
-                <p>
-                  Choose Image From Device
-                </p>
-
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden "
-                />
-
-              </label>
-
-              {/* PREVIEW */}
+              <UploadField
+                value={form.image}
+                onChange={(value) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    image: value,
+                  }))
+                }
+                folder="edvolve/events"
+                placeholder="Image URL or upload an image"
+                inputClassName="inputAdmin w-full border border-gray-200 py-4 pl-3"
+              />
 
               {form.image && (
-
-                <div className="
-                  relative
-                  h-[220px]
-                ">
-
+                <div className="relative h-[220px]">
                   <Image
                     src={form.image}
                     alt="preview"
                     fill
                     unoptimized
-                    className="
-                      object-cover
-                      rounded-lg
-                    "
+                    className="rounded-lg object-cover"
                   />
-
                 </div>
-
               )}
 
               <textarea
@@ -244,89 +293,52 @@ export default function AdminEventsPage() {
                 value={form.description}
                 onChange={handleChange}
                 placeholder="Description"
-                className="
-                  inputAdmin
-                  resize-none
-                  border border-gray-200 py-4 pl-3 w-full
-                "
+                className="inputAdmin w-full resize-none border border-gray-200 py-4 pl-3"
               />
 
-              <button className="
-                bg-[#aa9e31]
-                text-white
-                w-full
-                py-5
-
-                flex
-                items-center
-                justify-center
-                gap-4
-
-                hover:bg-[#572649]
-                transition
-              ">
-
+              <button
+                disabled={isSubmitting}
+                className="flex w-full items-center justify-center gap-4 bg-[#aa9e31] py-5 text-white transition hover:bg-[#572649]"
+              >
                 <Plus size={18} />
-
-                Add Event
-
+                {isSubmitting
+                  ? "Saving..."
+                  : editingEvent
+                    ? "Update Event"
+                    : "Add Event"}
               </button>
-
             </form>
-
           </div>
 
-          {/* EVENTS */}
-
           <div>
-
-            <h2 className="
-              font-serif
-              text-4xl
-              mb-10
-            ">
+            <h2 className="mb-10 font-serif text-4xl">
               Events
             </h2>
 
-            <div className="
-              grid
-              md:grid-cols-2
-              gap-8
-            ">
-
-              {events.map((event)=>(
-
+            <div className="grid gap-8 md:grid-cols-2">
+              {events.map((event) => (
                 <div
-                  key={event.id}
-                  className="
-                    bg-white
-                    shadow-sm
-                    overflow-hidden
-                  "
+                  key={event._id}
+                  className="overflow-hidden bg-white shadow-sm"
                 >
-
-                  <div className="
-                    relative
-                    h-[260px]
-                  ">
-
-                    <Image
-                      src={event.image}
-                      alt={event.title}
-                      fill
-                      unoptimized
-                      className="object-cover"
-                    />
-
-                  </div>
+                  {event.image ? (
+                    <div className="relative h-[260px]">
+                      <Image
+                        src={event.image}
+                        alt={event.title}
+                        fill
+                        unoptimized
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex h-[260px] items-center justify-center bg-gray-100 text-gray-500">
+                      No image
+                    </div>
+                  )}
 
                   <div className="p-8">
-
-                    <h3 className="
-                      font-serif
-                      text-3xl
-                      mb-4
-                    ">
+                    <h3 className="mb-4 font-serif text-3xl">
                       {event.title}
                     </h3>
 
@@ -335,54 +347,53 @@ export default function AdminEventsPage() {
                     </p>
 
                     <p className="mb-2">
-                      {event.date}
+                      {event.date
+                        ? formatDateInput(event.date)
+                        : "No date"}
                     </p>
 
-                    <p className="mb-6">
+                    <p className="mb-4">
                       {event.location}
                     </p>
 
-                    <button
-                      onClick={()=>
-                        deleteEvent(event.id)
-                      }
-                      className="
-                        bg-red-500
-                        text-white
-                        px-6
-                        py-3
+                    {event.description && (
+                      <p className="mb-6 line-clamp-3 text-gray-600">
+                        {event.description}
+                      </p>
+                    )}
 
-                        flex
-                        items-center
-                        gap-3
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={() => startEdit(event)}
+                        className="flex items-center gap-3 bg-blue-600 px-5 py-3 text-white transition hover:bg-blue-700"
+                      >
+                        <Pencil size={18} />
+                        Edit
+                      </button>
 
-                        hover:bg-red-600
-                        transition
-                      "
-                    >
-
-                      <Trash2 size={18}/>
-
-                      Delete
-
-                    </button>
-
+                      <button
+                        type="button"
+                        onClick={() => deleteEvent(event._id)}
+                        className="flex items-center gap-3 bg-red-500 px-5 py-3 text-white transition hover:bg-red-600"
+                      >
+                        <Trash2 size={18} />
+                        Delete
+                      </button>
+                    </div>
                   </div>
-
                 </div>
-
               ))}
 
+              {!events.length && !isLoading && (
+                <div className="bg-white p-10 text-gray-500">
+                  No events found.
+                </div>
+              )}
             </div>
-
           </div>
-
         </div>
-
       </div>
-
     </main>
-
   );
-
 }

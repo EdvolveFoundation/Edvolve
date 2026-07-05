@@ -18,10 +18,12 @@ import {
 
 export default function DashboardCharts({
   stats = {
-  blogs: 10,
-  staffs: 5,
-  messages: 12,
-  events: 4
+  blogs: 0,
+  staffs: 0,
+  messages: 0,
+  events: 0,
+  registrations: 0,
+  monthlyActivity: [],
 }
 }) {
 
@@ -42,22 +44,21 @@ export default function DashboardCharts({
       name: "Events",
       value: Number(stats.events || 0),
     },
+    {
+      name: "Registrations",
+      value: Number(stats.registrations || 0),
+    },
   ];
 
-
-
-  const monthlyActivityData = [
-    { month: "Feb", blogs: 4, messages: 12 },
-    { month: "Mar", blogs: 8, messages: 18 },
-    { month: "Apr", blogs: 6, messages: 10 },
-    { month: "May", blogs: 12, messages: 22 },
-    { month: "Jun", blogs: 9, messages: 15 },
-    { month: "Jul", blogs: 14, messages: 25 },
-    { month: "Aug", blogs: 11, messages: 20 },
-    { month: "Sep", blogs: 16, messages: 28 },
-    { month: "Oct", blogs: 13, messages: 24 },
-    { month: "Nov", blogs: 18, messages: 30 },
-  ];
+  const monthlyActivityData = Array.isArray(stats.monthlyActivity)
+    ? stats.monthlyActivity.map((item) => ({
+        month: item.month,
+        blogs: Number(item.blogs || 0),
+        messages: Number(item.messages || 0),
+        events: Number(item.events || 0),
+        registrations: Number(item.registrations || 0),
+      }))
+    : [];
 
   const colors = [
     "#572649",
@@ -72,10 +73,13 @@ export default function DashboardCharts({
   const hasData = analyticsData.some(
     (item) => item.value > 0
   );
-
-  console.log("Analytics Data:", analyticsData);
-  console.log("stats:", stats);
-  console.log("analyticsData:", analyticsData);
+  const hasMonthlyData = monthlyActivityData.some(
+    (item) =>
+      item.blogs > 0 ||
+      item.messages > 0 ||
+      item.events > 0 ||
+      item.registrations > 0
+  );
 
   return (
     <div className="grid lg:grid-cols-3 gap-6">
@@ -114,8 +118,9 @@ export default function DashboardCharts({
           </h3>
 
           <div className="w-full h-[350px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={monthlyActivityData}>
+            {hasMonthlyData ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={monthlyActivityData}>
                 <CartesianGrid
                   stroke="#E5E7EB"
                   strokeDasharray="5 5"
@@ -139,13 +144,13 @@ export default function DashboardCharts({
                 <Legend />
 
                 <defs>
-                  <linearGradient id="bookingGradient" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="blogGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#5B5FEF" stopOpacity={0.8} />
                     <stop offset="50%" stopColor="#CA5BAB" stopOpacity={0.4} />
                     <stop offset="95%" stopColor="#5B5FEF" stopOpacity={0.05} />
                   </linearGradient>
 
-                  <linearGradient id="inquiryGradient" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="messageGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#F87171" stopOpacity={0.8} />
                     <stop offset="50%" stopColor="#F59E0B" stopOpacity={0.4} />
                     <stop offset="95%" stopColor="#F87171" stopOpacity={0.05} />
@@ -169,8 +174,30 @@ export default function DashboardCharts({
                   strokeWidth={3}
                   name="Messages"
                 />
-              </AreaChart>
-            </ResponsiveContainer>
+                <Area
+                  type="monotone"
+                  dataKey="events"
+                  stroke="#22C55E"
+                  fill="transparent"
+                  strokeWidth={3}
+                  name="Events"
+                />
+
+                <Area
+                  type="monotone"
+                  dataKey="registrations"
+                  stroke="#F59E0B"
+                  fill="transparent"
+                  strokeWidth={3}
+                  name="Registrations"
+                />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full items-center justify-center text-gray-500">
+                No activity has been recorded yet.
+              </div>
+            )}
           </div>
         </div>
       </div>

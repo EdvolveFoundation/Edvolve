@@ -1,24 +1,34 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   User,
   Briefcase,
   Save,
-  Image as ImageIcon,
   FileText,
   Users,
 } from "lucide-react";
+import UploadField from "@/components/admin/UploadField";
+
+const emptyForm = {
+  fullName: "",
+  role: "",
+  email: "",
+  phone: "",
+  department: "",
+  address: "",
+  bio: "",
+  image: "",
+  category: "management",
+  featured: false,
+};
 
 export default function ManagementAdminPage() {
-  const [formData, setFormData] = useState({
-    fullName: "",
-    role: "",
-    bio: "",
-    image: "",
-    category: "management",
-    featured: false,
-  });
+  const router = useRouter();
+  const [formData, setFormData] = useState(emptyForm);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -31,25 +41,30 @@ export default function ManagementAdminPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setIsSubmitting(true);
 
     try {
-      console.log(formData);
-
-      // API CALL HERE
-
-      alert("Member added successfully");
-
-      setFormData({
-        fullName: "",
-        role: "",
-        bio: "",
-        image: "",
-        category: "management",
-        featured: false,
+      const response = await fetch("/api/staff", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
       });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to save member.");
+      }
+
+      setFormData(emptyForm);
+      router.push("/admin/staff");
+      router.refresh();
     } catch (error) {
-      console.error(error);
-      alert("Failed to save member");
+      setError(error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -81,6 +96,12 @@ export default function ManagementAdminPage() {
               Add a board member or management team member.
             </p>
           </div>
+
+          {error && (
+            <div className="mx-6 mt-6 rounded-lg bg-red-50 p-4 text-red-700">
+              {error}
+            </div>
+          )}
 
           <form
             onSubmit={handleSubmit}
@@ -135,6 +156,70 @@ export default function ManagementAdminPage() {
               </div>
             </div>
 
+            {/* EMAIL */}
+            <div>
+              <label className="block mb-2 text-sm font-medium">
+                Email
+              </label>
+
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="name@edvolvefoundation.org"
+                className="w-full px-4 py-3 border rounded-xl"
+              />
+            </div>
+
+            {/* PHONE */}
+            <div>
+              <label className="block mb-2 text-sm font-medium">
+                Phone
+              </label>
+
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="+234..."
+                className="w-full px-4 py-3 border rounded-xl"
+              />
+            </div>
+
+            {/* DEPARTMENT */}
+            <div>
+              <label className="block mb-2 text-sm font-medium">
+                Department
+              </label>
+
+              <input
+                type="text"
+                name="department"
+                value={formData.department}
+                onChange={handleChange}
+                placeholder="Programs"
+                className="w-full px-4 py-3 border rounded-xl"
+              />
+            </div>
+
+            {/* ADDRESS */}
+            <div>
+              <label className="block mb-2 text-sm font-medium">
+                Address
+              </label>
+
+              <input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                placeholder="Office address"
+                className="w-full px-4 py-3 border rounded-xl"
+              />
+            </div>
+
             {/* CATEGORY */}
             <div>
               <label className="block mb-2 text-sm font-medium">
@@ -164,27 +249,20 @@ export default function ManagementAdminPage() {
               </div>
             </div>
 
-            {/* IMAGE */}
             <div>
-              <label className="block mb-2 text-sm font-medium">
-                Image URL
-              </label>
-
-              <div className="relative">
-                <ImageIcon
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-
-                <input
-                  type="text"
-                  name="image"
-                  value={formData.image}
-                  onChange={handleChange}
-                  placeholder="/images/member.jpg"
-                  className="w-full pl-11 pr-4 py-3 border rounded-xl"
-                />
-              </div>
+              <UploadField
+                label="Image"
+                value={formData.image}
+                onChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    image: value,
+                  }))
+                }
+                folder="edvolve/staff"
+                placeholder="/images/member.jpg or upload an image"
+                inputClassName="w-full px-4 py-3 border rounded-xl"
+              />
             </div>
 
             {/* BIO */}
@@ -232,6 +310,7 @@ export default function ManagementAdminPage() {
 
               <button
                 type="button"
+                onClick={() => router.push("/admin/staff")}
                 className="px-6 py-3 border rounded-xl"
               >
                 Cancel
@@ -239,10 +318,11 @@ export default function ManagementAdminPage() {
 
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-xl"
               >
                 <Save size={18} />
-                Save Member
+                {isSubmitting ? "Saving..." : "Save Member"}
               </button>
 
             </div>

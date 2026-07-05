@@ -1,8 +1,60 @@
 "use client";
 
+import { useState } from "react";
 import { Mail, Phone, MapPin } from "lucide-react";
 
 export default function ContactPage() {
+    const [formData, setFormData] = useState({
+        name: "",
+        email: "",
+        subject: "",
+        message: "",
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [status, setStatus] = useState("");
+    const [error, setError] = useState("");
+
+    const handleChange = (field, value) => {
+        setFormData((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setStatus("");
+        setError("");
+        setIsSubmitting(true);
+
+        try {
+            const response = await fetch("/api/contact", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(formData),
+            });
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.error || "Unable to send message.");
+            }
+
+            setFormData({
+                name: "",
+                email: "",
+                subject: "",
+                message: "",
+            });
+            setStatus("Message sent successfully.");
+        } catch (submitError) {
+            setError(submitError.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <main className="bg-[#f8f5f1]">
 
@@ -90,18 +142,43 @@ export default function ContactPage() {
                         Send Us a Message
                     </h2>
 
-                    <form className="space-y-6">
+                    {status && (
+                        <div className="mb-6 rounded-lg bg-green-50 p-4 text-green-700">
+                            {status}
+                        </div>
+                    )}
+
+                    {error && (
+                        <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-700">
+                            {error}
+                        </div>
+                    )}
+
+                    <form
+                        onSubmit={handleSubmit}
+                        className="space-y-6"
+                    >
 
                         <div className="grid md:grid-cols-2 gap-6">
                             <input
                                 type="text"
                                 placeholder="Your Name"
+                                value={formData.name}
+                                onChange={(e) =>
+                                    handleChange("name", e.target.value)
+                                }
+                                required
                                 className="w-full border border-gray-200 p-4 focus:border-[#b58e6f] outline-none"
                             />
 
                             <input
                                 type="email"
                                 placeholder="Email Address"
+                                value={formData.email}
+                                onChange={(e) =>
+                                    handleChange("email", e.target.value)
+                                }
+                                required
                                 className="w-full border border-gray-200 p-4 focus:border-[#b58e6f] outline-none"
                             />
                         </div>
@@ -109,19 +186,30 @@ export default function ContactPage() {
                         <input
                             type="text"
                             placeholder="Subject"
+                            value={formData.subject}
+                            onChange={(e) =>
+                                handleChange("subject", e.target.value)
+                            }
+                            required
                             className="w-full border border-gray-200 p-4 focus:border-[#b58e6f] outline-none"
                         />
 
                         <textarea
                             rows={6}
                             placeholder="Your Message"
+                            value={formData.message}
+                            onChange={(e) =>
+                                handleChange("message", e.target.value)
+                            }
+                            required
                             className="w-full border border-gray-200 p-4 focus:border-[#b58e6f] outline-none resize-none"
                         />
 
                         <button
+                            disabled={isSubmitting}
                             className="w-full bg-[#b58e6f] text-white py-4 uppercase tracking-[3px] text-sm hover:bg-[#9c764f] transition"
                         >
-                            Send Message
+                            {isSubmitting ? "Sending..." : "Send Message"}
                         </button>
 
                     </form>
