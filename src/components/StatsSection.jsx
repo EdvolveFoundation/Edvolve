@@ -48,19 +48,19 @@ export default function StatsSection() {
   return (
     <section ref={ref} className=" py-28 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-white/20">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-white/20">
           {stats.map((stat, index) => (
             <div
               key={index}
-              className="relative flex items-center justify-center py-16 group"
+              className="relative flex flex-col items-center justify-center text-center py-10 md:py-16 px-3 group"
             >
               {/* Animated Background Number */}
-              <span className="absolute text-[3rem] md:text-[6rem] font-serif text-white/10 leading-none select-none">
+              <span className="absolute text-[2.8rem] sm:text-[3.5rem] md:text-[6rem] font-serif text-white/10 leading-none select-none">
                 <CountUp value={stat.number} isInView={inView} />
               </span>
 
               {/* Label */}
-              <h3 className="relative z-10 text-white text-xl md:text-2xl font-serif transition-all duration-500 group-hover:text-[#c2b439]">
+              <h3 className="relative z-10 text-center text-sm sm:text-base md:text-2xl font-serif leading-snug transition-all duration-500 group-hover:text-[#c2b439]">
                 {stat.label}
               </h3>
             </div>
