@@ -1,4 +1,4 @@
-import { blogPosts } from "@/data/blogPosts";
+import { getPublishedBlogs } from "@/lib/content";
 import { getSiteUrl } from "@/lib/site-url";
 
 const staticRoutes = [
@@ -20,7 +20,9 @@ const staticRoutes = [
   "/RegisterPage",
 ];
 
-export default function sitemap() {
+export const dynamic = "force-dynamic";
+
+export default async function sitemap() {
   const siteUrl = getSiteUrl();
   const lastModified = new Date();
 
@@ -31,7 +33,7 @@ export default function sitemap() {
     priority: path === "" ? 1 : 0.7,
   }));
 
-  const posts = blogPosts.map((post) => ({
+  const posts = (await getPublishedBlogs()).map((post) => ({
     url: `${siteUrl}/blog/${post.slug}`,
     lastModified,
     changeFrequency: "monthly",

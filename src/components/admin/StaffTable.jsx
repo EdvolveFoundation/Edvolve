@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Search,
   Trash2,
@@ -17,6 +18,24 @@ import { useRouter } from "next/navigation";
 
 
 export default function StaffTable({ staffList, onDelete }) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const filteredStaff = normalizedSearch
+    ? staffList.filter((staff) =>
+        [
+          staff.fullName,
+          staff.email,
+          staff.phone,
+          staff.role,
+          staff.department,
+          staff.address,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedSearch)
+      )
+    : staffList;
 
   const router = useRouter();
 
@@ -134,6 +153,8 @@ export default function StaffTable({ staffList, onDelete }) {
             <input
               type="text"
               placeholder="Search staff..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
               className="w-full pl-11 pr-4 py-3 rounded-xl border focus:ring-2 focus:ring-black outline-none"
             />
           </div>
@@ -176,7 +197,7 @@ export default function StaffTable({ staffList, onDelete }) {
 
             <tbody>
 
-              {staffList.length === 0 ? (
+              {filteredStaff.length === 0 ? (
                 <tr>
                   <td
                     colSpan="6"
@@ -189,17 +210,21 @@ export default function StaffTable({ staffList, onDelete }) {
                       />
 
                       <p className="font-medium">
-                        No staff found
+                        {staffList.length
+                          ? "No staff match your search"
+                          : "No staff found"}
                       </p>
 
-                      <span className="text-sm text-gray-400">
-                        Add staff members to get started.
-                      </span>
+                      {!staffList.length && (
+                        <span className="text-sm text-gray-400">
+                          Add staff members to get started.
+                        </span>
+                      )}
                     </div>
                   </td>
                 </tr>
               ) : (
-                staffList.map((staff) => (
+                filteredStaff.map((staff) => (
                   <tr
                     key={staff._id}
                     className="border-t hover:bg-gray-50 transition"

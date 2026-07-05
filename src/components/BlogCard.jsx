@@ -1,9 +1,10 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
+import { getBlogExcerpt } from "@/lib/content";
 
 export default function BlogCard({ post }) {
+    const excerpt = post.excerpt || getBlogExcerpt(post);
+
     return (
         <Link href={`/blog/${post.slug}`}>
 
@@ -32,7 +33,7 @@ export default function BlogCard({ post }) {
                     </h2>
 
                     <p className="mt-4 text-[#6d6666] leading-relaxed">
-                        {post.excerpt}
+                        {excerpt}
                     </p>
 
                     <p className="mt-6 text-sm text-[#8a7d75]">{post.date}</p>

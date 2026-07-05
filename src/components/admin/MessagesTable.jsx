@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Trash2,
   Mail,
@@ -13,6 +14,22 @@ export default function MessagesTable({
   contacts = [],
   onDelete,
 }) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const filteredContacts = normalizedSearch
+    ? contacts.filter((message) =>
+        [
+          message.name,
+          message.email,
+          message.subject,
+          message.message,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedSearch)
+      )
+    : contacts;
 
   if (contacts.length === 0) {
     return (
@@ -149,6 +166,8 @@ export default function MessagesTable({
             <input
               type="text"
               placeholder="Search messages..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
               className="
                 w-full
                 pl-11
@@ -201,7 +220,7 @@ export default function MessagesTable({
 
             <tbody>
 
-              {contacts.map((message) => (
+              {filteredContacts.map((message) => (
 
                 <tr
                   key={message._id}
@@ -295,6 +314,17 @@ export default function MessagesTable({
                 </tr>
 
               ))}
+
+              {!filteredContacts.length && (
+                <tr>
+                  <td
+                    colSpan="5"
+                    className="py-12 text-center text-gray-500"
+                  >
+                    No messages match your search.
+                  </td>
+                </tr>
+              )}
 
             </tbody>
 

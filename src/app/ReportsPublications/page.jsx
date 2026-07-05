@@ -5,43 +5,9 @@ import {
     BarChart3,
     FileSearch,
 } from "lucide-react";
+import { getReports } from "@/lib/content";
 
-const publications = [
-    {
-        title: "Edvolve Foundation Organisation Profile",
-        year: "2025",
-        category: "Corporate Publication",
-        description:
-            "Overview of our mission, programs, governance structure, impact areas, and strategic priorities.",
-        link: "#",
-    },
-    {
-        title: "Education & Human Capital Development Report",
-        year: "2025",
-        category: "Impact Report",
-        description:
-            "Insights from educational initiatives, mentorship programs, and youth empowerment projects.",
-        link: "#",
-    },
-    {
-        title: "Advocacy & Social Change Review",
-        year: "2025",
-        category: "Policy Brief",
-        description:
-            "Findings and lessons from advocacy campaigns, civic engagement, and governance initiatives.",
-        link: "#",
-    },
-    {
-        title: "Entrepreneurship & Skills Development Report",
-        year: "2025",
-        category: "Program Report",
-        description:
-            "Measuring outcomes from entrepreneurship, skills acquisition, and MSME development programs.",
-        link: "#",
-    },
-];
-
-
+export const dynamic = "force-dynamic";
 
 const researchAreas = [
     "Education & Human Capital Development",
@@ -54,7 +20,13 @@ const researchAreas = [
     "Gender Inclusion",
 ];
 
-export default function ReportsPublicationsPage() {
+export default async function ReportsPublicationsPage() {
+    const publications = await getReports();
+    const organisationProfile =
+        publications.find((item) =>
+            item.title.toLowerCase().includes("profile")
+        ) || publications[0];
+
     return (
         <main className="bg-white">
             {/* HERO */}
@@ -144,7 +116,9 @@ export default function ReportsPublicationsPage() {
                                     </span>
 
                                     <a
-                                        href={item.link}
+                                        href={item.link || "#"}
+                                        target={item.link ? "_blank" : undefined}
+                                        rel={item.link ? "noopener noreferrer" : undefined}
                                         className="inline-flex items-center gap-2 rounded-full bg-gray-800 px-5 py-3 text-white transition hover:bg-gray-900"
                                     >
                                         <Download size={18} />
@@ -153,6 +127,12 @@ export default function ReportsPublicationsPage() {
                                 </div>
                             </div>
                         ))}
+
+                        {!publications.length && (
+                            <div className="rounded-3xl bg-white p-8 text-center text-gray-500 shadow-sm md:col-span-2">
+                                No reports have been published yet.
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>
@@ -264,9 +244,14 @@ export default function ReportsPublicationsPage() {
                         innovation, advocacy, and sustainable impact.
                     </p>
 
-                    <button className="mt-10 rounded-full bg-yellow-600 px-8 py-4 font-semibold transition hover:bg-yellow-700">
+                    <a
+                        href={organisationProfile?.link || "#"}
+                        target={organisationProfile?.link ? "_blank" : undefined}
+                        rel={organisationProfile?.link ? "noopener noreferrer" : undefined}
+                        className="mt-10 inline-block rounded-full bg-yellow-600 px-8 py-4 font-semibold transition hover:bg-yellow-700"
+                    >
                         Download Organisation Profile
-                    </button>
+                    </a>
                 </div>
             </section>
         </main>

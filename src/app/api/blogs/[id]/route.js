@@ -5,7 +5,8 @@ import {
   handleRouteError,
   json,
   noContent,
-  normalizeStringArray,
+  normalizeCommaSeparatedList,
+  normalizeParagraphList,
   notFound,
   readJson,
   slugify,
@@ -15,6 +16,15 @@ import { query } from "@/lib/db";
 import { serializeBlog } from "@/lib/serializers";
 
 export const runtime = "nodejs";
+
+const sectionSchema = z.object({
+  heading: z.string().trim().optional().default(""),
+  image: z.string().trim().optional().default(""),
+  content: z
+    .union([z.array(z.string()), z.string()])
+    .optional()
+    .default([]),
+});
 
 const updateBlogSchema = z.object({
   title: z.string().trim().min(2).optional(),
@@ -27,7 +37,7 @@ const updateBlogSchema = z.object({
   tags: z.union([z.array(z.string()), z.string()]).optional(),
   quote: z.string().trim().optional(),
   introduction: z.union([z.array(z.string()), z.string()]).optional(),
-  sections: z.array(z.record(z.string(), z.any())).optional(),
+  sections: z.array(sectionSchema).optional(),
   published: z.boolean().optional(),
 });
 
@@ -91,17 +101,25 @@ export async function PATCH(request, { params }) {
   if (data.author !== undefined) add("author", data.author);
   if (data.readTime !== undefined) add("read_time", data.readTime);
   if (data.tags !== undefined) {
-    add("tags", JSON.stringify(normalizeStringArray(data.tags)));
+    add("tags", JSON.stringify(normalizeCommaSeparatedList(data.tags)));
   }
   if (data.quote !== undefined) add("quote", data.quote);
   if (data.introduction !== undefined) {
     add(
       "introduction",
-      JSON.stringify(normalizeStringArray(data.introduction))
+      JSON.stringify(normalizeParagraphList(data.introduction))
     );
   }
   if (data.sections !== undefined) {
-    add("sections", JSON.stringify(data.sections));
+    add(
+      "sections",
+      JSON.stringify(
+        data.sections.map((section) => ({
+          ...section,
+          content: normalizeParagraphList(section.content),
+        }))
+      )
+    );
   }
   if (data.published !== undefined) add("published", data.published);
 

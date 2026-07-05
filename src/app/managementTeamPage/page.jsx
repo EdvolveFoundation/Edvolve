@@ -1,77 +1,74 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Users,
   Shield,
-  Briefcase,
-  Star,
   Award,
 } from "lucide-react";
 
-
-
-const boardOfTrustees = [
-  {
-    fullName: "Prof. Vincent A. Asuru, MNAE, MNIM, KSM, KSS, JP.",
-    role: "Chairman, Board of Trustees",
-    image: "/test15.png",
-    bio: "Prof. Vincent Asuru is a Professor of Educational Measurement and Evaluation at Ignatius Ajuru University of Education, Port Harcourt.",
-  },
-
-  {
-    fullName: "Victor Chimenum Owhorji",
-    role: "ED/Board Secretary",
-    image: "/test9.png",
-  
-  },
-  {
-    fullName: "Goodness Stephen Owhorji",
-    role: "Board Member",
-    image: "/test19.png",
-   
-  },
-  {
-    fullName: "Anietie Happiness Johnson",
-    role: "Board Member",
-    image: "/test10.png",
-    
-  },
-
-  {
-    fullName: "Chukwuma Banigo Wabara",
-    role: "Board Member",
-    image: "/test8.png",
-    
-  },
-];
-
-const managementTeam = [
-  {
-    fullName: "Eugenia Igwe",
-    role: " Director of Programs",
-    image: "/test11.PNG",
-    
-  },
-
-  {
-    fullName: "Sandra Omosigho",
-    role: "Director of Operations",
-    image: "/test13.png",
-   
-  },
-
-  {
-    fullName: "Partnership Lead",
-    role: "Stakeholder Engagement",
-    image: "/test12.jpg",
-    
-  },
-
-];
-
 export default function ManagementTeamPage() {
+  const [staffMembers, setStaffMembers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadStaff() {
+      try {
+        const response = await fetch("/api/staff", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error("Unable to load staff.");
+        }
+
+        const data = await response.json();
+
+        if (isMounted) {
+          setStaffMembers(data.staff || []);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setLoadError(error.message);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadStaff();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const { boardOfTrustees, managementTeam } = useMemo(() => {
+    return {
+      boardOfTrustees: staffMembers.filter(
+        (member) => member.category === "board"
+      ),
+      managementTeam: staffMembers.filter(
+        (member) => member.category !== "board"
+      ),
+    };
+  }, [staffMembers]);
+
+  const featuredTrustee =
+    boardOfTrustees.find((member) => member.featured) ||
+    boardOfTrustees[0];
+  const otherTrustees = featuredTrustee
+    ? boardOfTrustees.filter(
+        (member) => member._id !== featuredTrustee._id
+      )
+    : [];
 
 
 
@@ -183,44 +180,60 @@ export default function ManagementTeamPage() {
             </p>
           </div>
 
-          {/* CHAIRMAN */}
-          <div className="max-w-4xl mx-auto mb-20">
-            <motion.div
-              whileHover={{ y: -12 }}
-              className="bg-white overflow-hidden shadow-xl"
-            >
-              <div className="grid lg:grid-cols-2">
+          {isLoading && (
+            <p className="mb-10 text-center text-gray-500">
+              Loading team members...
+            </p>
+          )}
 
-                <div className="relative h-[500px]">
-                  <Image
-                    src={boardOfTrustees[0].image}
-                    alt={boardOfTrustees[0].fullName}
-                    fill
-                    className="object-cover"
-                  />
+          {loadError && (
+            <p className="mb-10 text-center text-red-600">
+              {loadError}
+            </p>
+          )}
+
+          {featuredTrustee && (
+            <div className="max-w-4xl mx-auto mb-20">
+              <motion.div
+                whileHover={{ y: -12 }}
+                className="bg-white overflow-hidden shadow-xl"
+              >
+                <div className="grid lg:grid-cols-2">
+
+                  <div className="relative h-[500px]">
+                    <Image
+                      src={featuredTrustee.image || "/logo.png"}
+                      alt={featuredTrustee.fullName}
+                      fill
+                      unoptimized={Boolean(featuredTrustee.image?.startsWith("http"))}
+                      className="object-cover"
+                    />
+                  </div>
+
+                  <div className="p-10 flex flex-col justify-center">
+                    <p className="uppercase tracking-widest text-sm text-[#8a6a72] mb-3">
+                      {featuredTrustee.role}
+                    </p>
+
+                    <h3 className="font-serif text-4xl mb-4">
+                      {featuredTrustee.fullName}
+                    </h3>
+
+                    {featuredTrustee.bio && (
+                      <p className="text-gray-600 leading-8">
+                        {featuredTrustee.bio}
+                      </p>
+                    )}
+                  </div>
+
                 </div>
-
-                <div className="p-10 flex flex-col justify-center">
-                  <p className="uppercase tracking-widest text-sm text-[#8a6a72] mb-3">
-                    {boardOfTrustees[0].role}
-                  </p>
-
-                  <h3 className="font-serif text-4xl mb-4">
-                    {boardOfTrustees[0].fullName}
-                  </h3>
-
-                  <p className="text-gray-600 leading-8">
-                    {boardOfTrustees[0].bio}
-                  </p>
-                </div>
-
-              </div>
-            </motion.div>
-          </div>
+              </motion.div>
+            </div>
+          )}
 
           {/* OTHER TRUSTEES */}
           <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-10">
-            {boardOfTrustees.slice(1).map((member) => (
+            {otherTrustees.map((member) => (
               <motion.div
                 key={member.fullName}
                 whileHover={{ y: -12 }}
@@ -230,9 +243,10 @@ export default function ManagementTeamPage() {
 
                   <div className="relative h-[280px] overflow-hidden">
                     <Image
-                      src={member.image}
+                      src={member.image || "/logo.png"}
                       alt={member.fullName}
                       fill
+                      unoptimized={Boolean(member.image?.startsWith("http"))}
                       className="object-cover"
                     />
                   </div>
@@ -252,6 +266,12 @@ export default function ManagementTeamPage() {
                 </div>
               </motion.div>
             ))}
+
+            {!boardOfTrustees.length && !isLoading && (
+              <div className="rounded-2xl bg-white p-8 text-center text-gray-500 xl:col-span-4">
+                No board members have been added yet.
+              </div>
+            )}
           </div>
 
         </div>
@@ -292,9 +312,10 @@ export default function ManagementTeamPage() {
 
                   <div className="relative h-[280px] overflow-hidden">
                     <Image
-                      src={member.image || "/default.jpg"}
+                      src={member.image || "/logo.png"}
                       alt={member.fullName}
                       fill
+                      unoptimized={Boolean(member.image?.startsWith("http"))}
                       className="object-cover"
                     />
                   </div>
@@ -314,6 +335,12 @@ export default function ManagementTeamPage() {
                 </div>
               </motion.div>
             ))}
+
+            {!managementTeam.length && !isLoading && (
+              <div className="rounded-2xl bg-white p-8 text-center text-gray-500 xl:col-span-4">
+                No management team members have been added yet.
+              </div>
+            )}
           </div>
 
         </div>

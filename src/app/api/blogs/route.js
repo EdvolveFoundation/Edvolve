@@ -4,7 +4,8 @@ import {
   created,
   handleRouteError,
   json,
-  normalizeStringArray,
+  normalizeCommaSeparatedList,
+  normalizeParagraphList,
   readJson,
   slugify,
   validate,
@@ -45,11 +46,11 @@ function normalizeBlog(input) {
   return {
     ...input,
     slug: slugify(input.slug || input.title),
-    tags: normalizeStringArray(input.tags),
-    introduction: normalizeStringArray(input.introduction),
+    tags: normalizeCommaSeparatedList(input.tags),
+    introduction: normalizeParagraphList(input.introduction),
     sections: input.sections.map((section) => ({
       ...section,
-      content: normalizeStringArray(section.content),
+      content: normalizeParagraphList(section.content),
     })),
   };
 }

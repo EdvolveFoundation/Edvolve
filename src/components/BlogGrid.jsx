@@ -1,9 +1,8 @@
-"use client";
-
 import BlogCard from "./BlogCard";
-import { blogPosts } from "@/data/blogPosts";
 
-export default function BlogGrid() {
+export default function BlogGrid({
+    posts = [],
+}) {
     return (
         <section className="py-24 px-6 bg-white">
 
@@ -75,14 +74,20 @@ export default function BlogGrid() {
                 gap-14
             ">
 
-                {blogPosts.map((post) => (
+                {posts.map((post) => (
 
                     <BlogCard 
-                        key={post.slug} 
+                        key={post.slug}
                         post={post} 
                     />
 
                 ))}
+
+                {!posts.length && (
+                    <div className="md:col-span-2 lg:col-span-3 rounded-2xl border border-gray-200 p-10 text-center text-gray-500">
+                        No blog posts have been published yet.
+                    </div>
+                )}
 
             </div>
 
