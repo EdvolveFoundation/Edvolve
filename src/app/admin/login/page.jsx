@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 const DEFAULT_ADMIN_EMAIL = "admin@edvolvefoundation.org";
+const DEFAULT_ADMIN_CALLBACK_URL = "/admin";
 
 const initialForm = {
   email: DEFAULT_ADMIN_EMAIL,
@@ -42,6 +43,31 @@ async function postJson(path, payload) {
   }
 
   return data;
+}
+
+function normalizeAdminCallbackUrl(value) {
+  if (!value) {
+    return DEFAULT_ADMIN_CALLBACK_URL;
+  }
+
+  try {
+    const url = new URL(value, window.location.origin);
+
+    if (url.origin !== window.location.origin && /^https?:/i.test(value)) {
+      return DEFAULT_ADMIN_CALLBACK_URL;
+    }
+
+    if (
+      !url.pathname.startsWith("/admin") ||
+      url.pathname === "/admin/login"
+    ) {
+      return DEFAULT_ADMIN_CALLBACK_URL;
+    }
+
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return DEFAULT_ADMIN_CALLBACK_URL;
+  }
 }
 
 export default function AdminLoginPage() {
@@ -135,7 +161,7 @@ export default function AdminLoginPage() {
   const getCallbackUrl = () => {
     const params = new URLSearchParams(window.location.search);
 
-    return params.get("callbackUrl") || "/admin";
+    return normalizeAdminCallbackUrl(params.get("callbackUrl"));
   };
 
   const ensurePasswordsMatch = () => {
@@ -186,12 +212,14 @@ export default function AdminLoginPage() {
     clearFeedback();
     setIsSubmitting(true);
 
+    const callbackUrl = getCallbackUrl();
+
     const response = await signIn("credentials", {
       email: formData.email,
       password: formData.password,
       otp: formData.otp,
       redirect: false,
-      callbackUrl: getCallbackUrl(),
+      callbackUrl,
     });
 
     setIsSubmitting(false);
@@ -201,7 +229,7 @@ export default function AdminLoginPage() {
       return;
     }
 
-    router.replace(response.url || "/admin");
+    router.replace(callbackUrl);
     router.refresh();
   };
 
