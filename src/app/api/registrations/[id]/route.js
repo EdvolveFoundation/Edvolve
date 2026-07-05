@@ -8,6 +8,7 @@ import {
   readJson,
   validate,
 } from "@/lib/api-utils";
+import { createAdminNotification } from "@/lib/admin-notifications";
 import { query } from "@/lib/db";
 import { serializeRegistration } from "@/lib/serializers";
 
@@ -50,8 +51,22 @@ export async function PATCH(request, { params }) {
       return notFound("Registration not found.");
     }
 
+    const registration = serializeRegistration(result.rows[0]);
+
+    await createAdminNotification({
+      type: "registration",
+      title: "Registration status updated",
+      message: `${registration.name}'s registration is now ${registration.status}.`,
+      href: "/admin/registrations",
+      metadata: {
+        registrationId: registration.id,
+        email: registration.email,
+        status: registration.status,
+      },
+    });
+
     return json({
-      registration: serializeRegistration(result.rows[0]),
+      registration,
     });
   } catch (error) {
     return handleRouteError(error);
@@ -68,7 +83,28 @@ export async function DELETE(request, { params }) {
   const { id } = await params;
 
   try {
-    await query(`delete from registrations where id = $1`, [id]);
+    const result = await query(
+      `delete from registrations where id = $1 returning id, name, email, role, status`,
+      [id]
+    );
+
+    if (!result.rowCount) {
+      return notFound("Registration not found.");
+    }
+
+    await createAdminNotification({
+      type: "registration",
+      title: "Registration deleted",
+      message: `${result.rows[0].name}'s registration was deleted.`,
+      href: "/admin/registrations",
+      metadata: {
+        registrationId: result.rows[0].id,
+        email: result.rows[0].email,
+        role: result.rows[0].role,
+        status: result.rows[0].status,
+      },
+    });
+
     return noContent();
   } catch (error) {
     return handleRouteError(error);

@@ -9,6 +9,10 @@ import {
   readJson,
   validate,
 } from "@/lib/api-utils";
+import {
+  createAdminNotification,
+  getContentHref,
+} from "@/lib/admin-notifications";
 import { query } from "@/lib/db";
 import { serializeReport } from "@/lib/serializers";
 
@@ -76,8 +80,22 @@ export async function PATCH(request, { params }) {
       return notFound("Report not found.");
     }
 
+    const report = serializeReport(result.rows[0]);
+
+    await createAdminNotification({
+      type: "report",
+      title: "Report updated",
+      message: `${report.title} was updated.`,
+      href: getContentHref("report", report.id),
+      metadata: {
+        reportId: report.id,
+        year: report.year,
+        category: report.category,
+      },
+    });
+
     return json({
-      report: serializeReport(result.rows[0]),
+      report,
     });
   } catch (error) {
     return handleRouteError(error);
@@ -94,7 +112,27 @@ export async function DELETE(request, { params }) {
   const { id } = await params;
 
   try {
-    await query(`delete from reports where id = $1`, [id]);
+    const result = await query(
+      `delete from reports where id = $1 returning id, title, year, category`,
+      [id]
+    );
+
+    if (!result.rowCount) {
+      return notFound("Report not found.");
+    }
+
+    await createAdminNotification({
+      type: "report",
+      title: "Report deleted",
+      message: `${result.rows[0].title} was deleted.`,
+      href: "/admin/ReportPage",
+      metadata: {
+        reportId: result.rows[0].id,
+        year: result.rows[0].year,
+        category: result.rows[0].category,
+      },
+    });
+
     return noContent();
   } catch (error) {
     return handleRouteError(error);

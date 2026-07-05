@@ -7,6 +7,7 @@ import {
   readJson,
   validate,
 } from "@/lib/api-utils";
+import { createAdminNotification } from "@/lib/admin-notifications";
 import { query } from "@/lib/db";
 import { serializeRegistration } from "@/lib/serializers";
 
@@ -80,8 +81,22 @@ export async function POST(request) {
       ]
     );
 
+    const createdRegistration = serializeRegistration(result.rows[0]);
+
+    await createAdminNotification({
+      type: "registration",
+      title: "New registration",
+      message: `${createdRegistration.name} registered as ${createdRegistration.role}.`,
+      href: "/admin/registrations",
+      metadata: {
+        registrationId: createdRegistration.id,
+        email: createdRegistration.email,
+        role: createdRegistration.role,
+      },
+    });
+
     return created({
-      registration: serializeRegistration(result.rows[0]),
+      registration: createdRegistration,
     });
   } catch (error) {
     return handleRouteError(error);

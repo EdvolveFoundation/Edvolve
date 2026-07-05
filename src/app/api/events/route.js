@@ -8,6 +8,10 @@ import {
   toDateString,
   validate,
 } from "@/lib/api-utils";
+import {
+  createAdminNotification,
+  getContentHref,
+} from "@/lib/admin-notifications";
 import { query } from "@/lib/db";
 import { serializeEvent } from "@/lib/serializers";
 
@@ -81,8 +85,22 @@ export async function POST(request) {
       ]
     );
 
+    const createdEvent = serializeEvent(result.rows[0]);
+
+    await createAdminNotification({
+      type: "event",
+      title: "Event created",
+      message: `${createdEvent.title} was added to events.`,
+      href: getContentHref("event", createdEvent.id),
+      metadata: {
+        eventId: createdEvent.id,
+        category: createdEvent.category,
+        date: createdEvent.date,
+      },
+    });
+
     return created({
-      event: serializeEvent(result.rows[0]),
+      event: createdEvent,
     });
   } catch (error) {
     return handleRouteError(error);

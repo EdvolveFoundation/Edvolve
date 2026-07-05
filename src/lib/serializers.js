@@ -96,3 +96,19 @@ export function serializeRegistration(row) {
     updatedAt: row.updated_at,
   };
 }
+
+export function serializeAdminNotification(row) {
+  return {
+    id: row.id,
+    _id: row.id,
+    type: row.type,
+    title: row.title,
+    message: row.message,
+    href: row.href,
+    metadata: row.metadata || {},
+    read: row.read,
+    readAt: row.read_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}

@@ -7,6 +7,10 @@ import {
   readJson,
   validate,
 } from "@/lib/api-utils";
+import {
+  createAdminNotification,
+  getContentHref,
+} from "@/lib/admin-notifications";
 import { query } from "@/lib/db";
 import { serializeReport } from "@/lib/serializers";
 
@@ -77,8 +81,22 @@ export async function POST(request) {
       ]
     );
 
+    const createdReport = serializeReport(result.rows[0]);
+
+    await createAdminNotification({
+      type: "report",
+      title: "Report added",
+      message: `${createdReport.title} was added to reports.`,
+      href: getContentHref("report", createdReport.id),
+      metadata: {
+        reportId: createdReport.id,
+        year: createdReport.year,
+        category: createdReport.category,
+      },
+    });
+
     return created({
-      report: serializeReport(result.rows[0]),
+      report: createdReport,
     });
   } catch (error) {
     return handleRouteError(error);

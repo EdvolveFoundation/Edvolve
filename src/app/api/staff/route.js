@@ -7,6 +7,10 @@ import {
   readJson,
   validate,
 } from "@/lib/api-utils";
+import {
+  createAdminNotification,
+  getContentHref,
+} from "@/lib/admin-notifications";
 import { query } from "@/lib/db";
 import { serializeStaff } from "@/lib/serializers";
 
@@ -92,8 +96,21 @@ export async function POST(request) {
       ]
     );
 
+    const createdStaff = serializeStaff(result.rows[0]);
+
+    await createAdminNotification({
+      type: "staff",
+      title: "Staff member added",
+      message: `${createdStaff.fullName} was added as ${createdStaff.role}.`,
+      href: getContentHref("staff", createdStaff.id),
+      metadata: {
+        staffId: createdStaff.id,
+        category: createdStaff.category,
+      },
+    });
+
     return created({
-      staff: serializeStaff(result.rows[0]),
+      staff: createdStaff,
     });
   } catch (error) {
     return handleRouteError(error);

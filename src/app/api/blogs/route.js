@@ -10,6 +10,10 @@ import {
   slugify,
   validate,
 } from "@/lib/api-utils";
+import {
+  createAdminNotification,
+  getContentHref,
+} from "@/lib/admin-notifications";
 import { query } from "@/lib/db";
 import { serializeBlog } from "@/lib/serializers";
 
@@ -128,8 +132,23 @@ export async function POST(request) {
       ]
     );
 
+    const createdBlog = serializeBlog(result.rows[0]);
+
+    await createAdminNotification({
+      type: "blog",
+      title: createdBlog.published
+        ? "Blog post published"
+        : "Blog draft created",
+      message: `${createdBlog.title} was added to ${createdBlog.category}.`,
+      href: getContentHref("blog", createdBlog.id),
+      metadata: {
+        blogId: createdBlog.id,
+        slug: createdBlog.slug,
+      },
+    });
+
     return created({
-      blog: serializeBlog(result.rows[0]),
+      blog: createdBlog,
     });
   } catch (error) {
     return handleRouteError(error);

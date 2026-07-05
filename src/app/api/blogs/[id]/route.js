@@ -12,6 +12,10 @@ import {
   slugify,
   validate,
 } from "@/lib/api-utils";
+import {
+  createAdminNotification,
+  getContentHref,
+} from "@/lib/admin-notifications";
 import { query } from "@/lib/db";
 import { serializeBlog } from "@/lib/serializers";
 
@@ -54,8 +58,21 @@ export async function GET(request, { params }) {
       return notFound("Blog not found.");
     }
 
+    const blog = serializeBlog(result.rows[0]);
+
+    await createAdminNotification({
+      type: "blog",
+      title: "Blog post updated",
+      message: `${blog.title} was updated.`,
+      href: getContentHref("blog", blog.id),
+      metadata: {
+        blogId: blog.id,
+        slug: blog.slug,
+      },
+    });
+
     return json({
-      blog: serializeBlog(result.rows[0]),
+      blog,
     });
   } catch (error) {
     return handleRouteError(error);
@@ -160,7 +177,26 @@ export async function DELETE(request, { params }) {
   const { id } = await params;
 
   try {
-    await query(`delete from blogs where id = $1`, [id]);
+    const result = await query(
+      `delete from blogs where id = $1 returning id, title, slug`,
+      [id]
+    );
+
+    if (!result.rowCount) {
+      return notFound("Blog not found.");
+    }
+
+    await createAdminNotification({
+      type: "blog",
+      title: "Blog post deleted",
+      message: `${result.rows[0].title} was deleted.`,
+      href: "/admin/blog",
+      metadata: {
+        blogId: result.rows[0].id,
+        slug: result.rows[0].slug,
+      },
+    });
+
     return noContent();
   } catch (error) {
     return handleRouteError(error);

@@ -9,6 +9,10 @@ import {
   readJson,
   validate,
 } from "@/lib/api-utils";
+import {
+  createAdminNotification,
+  getContentHref,
+} from "@/lib/admin-notifications";
 import { query } from "@/lib/db";
 import { serializeStaff } from "@/lib/serializers";
 
@@ -46,8 +50,21 @@ export async function GET(request, { params }) {
       return notFound("Staff member not found.");
     }
 
+    const staff = serializeStaff(result.rows[0]);
+
+    await createAdminNotification({
+      type: "staff",
+      title: "Staff profile updated",
+      message: `${staff.fullName} was updated.`,
+      href: getContentHref("staff", staff.id),
+      metadata: {
+        staffId: staff.id,
+        category: staff.category,
+      },
+    });
+
     return json({
-      staff: serializeStaff(result.rows[0]),
+      staff,
     });
   } catch (error) {
     return handleRouteError(error);
@@ -131,7 +148,26 @@ export async function DELETE(request, { params }) {
   const { id } = await params;
 
   try {
-    await query(`delete from staff_members where id = $1`, [id]);
+    const result = await query(
+      `delete from staff_members where id = $1 returning id, full_name, role`,
+      [id]
+    );
+
+    if (!result.rowCount) {
+      return notFound("Staff member not found.");
+    }
+
+    await createAdminNotification({
+      type: "staff",
+      title: "Staff member deleted",
+      message: `${result.rows[0].full_name} was removed from staff records.`,
+      href: "/admin/staff",
+      metadata: {
+        staffId: result.rows[0].id,
+        role: result.rows[0].role,
+      },
+    });
+
     return noContent();
   } catch (error) {
     return handleRouteError(error);

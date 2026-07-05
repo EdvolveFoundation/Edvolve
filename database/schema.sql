@@ -104,6 +104,25 @@ create table if not exists registrations (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists admin_notifications (
+  id text primary key,
+  type text not null,
+  title text not null,
+  message text not null,
+  href text,
+  metadata jsonb not null default '{}'::jsonb,
+  read boolean not null default false,
+  read_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists admin_notifications_created_at_idx
+on admin_notifications (created_at desc);
+
+create index if not exists admin_notifications_read_idx
+on admin_notifications (read, created_at desc);
+
 create or replace function set_updated_at()
 returns trigger as $$
 begin
@@ -145,4 +164,9 @@ for each row execute function set_updated_at();
 drop trigger if exists admin_accounts_set_updated_at on admin_accounts;
 create trigger admin_accounts_set_updated_at
 before update on admin_accounts
+for each row execute function set_updated_at();
+
+drop trigger if exists admin_notifications_set_updated_at on admin_notifications;
+create trigger admin_notifications_set_updated_at
+before update on admin_notifications
 for each row execute function set_updated_at();

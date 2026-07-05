@@ -8,6 +8,7 @@ import {
   readJson,
   validate,
 } from "@/lib/api-utils";
+import { createAdminNotification } from "@/lib/admin-notifications";
 import { query } from "@/lib/db";
 import { serializeContactMessage } from "@/lib/serializers";
 
@@ -50,8 +51,23 @@ export async function PATCH(request, { params }) {
       return notFound("Message not found.");
     }
 
+    const contact = serializeContactMessage(result.rows[0]);
+
+    if (contact.read) {
+      await createAdminNotification({
+        type: "contact_message",
+        title: "Inquiry marked as read",
+        message: `${contact.name}'s message was marked as read.`,
+        href: "/admin/messages",
+        metadata: {
+          contactId: contact.id,
+          email: contact.email,
+        },
+      });
+    }
+
     return json({
-      contact: serializeContactMessage(result.rows[0]),
+      contact,
     });
   } catch (error) {
     return handleRouteError(error);
@@ -68,7 +84,27 @@ export async function DELETE(request, { params }) {
   const { id } = await params;
 
   try {
-    await query(`delete from contact_messages where id = $1`, [id]);
+    const result = await query(
+      `delete from contact_messages where id = $1 returning id, name, email, subject`,
+      [id]
+    );
+
+    if (!result.rowCount) {
+      return notFound("Message not found.");
+    }
+
+    await createAdminNotification({
+      type: "contact_message",
+      title: "Inquiry deleted",
+      message: `${result.rows[0].name}'s message was deleted.`,
+      href: "/admin/messages",
+      metadata: {
+        contactId: result.rows[0].id,
+        email: result.rows[0].email,
+        subject: result.rows[0].subject,
+      },
+    });
+
     return noContent();
   } catch (error) {
     return handleRouteError(error);

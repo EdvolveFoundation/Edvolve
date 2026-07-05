@@ -7,6 +7,7 @@ import {
   readJson,
   validate,
 } from "@/lib/api-utils";
+import { createAdminNotification } from "@/lib/admin-notifications";
 import { query } from "@/lib/db";
 import { serializeContactMessage } from "@/lib/serializers";
 
@@ -74,8 +75,22 @@ export async function POST(request) {
       ]
     );
 
+    const contact = serializeContactMessage(result.rows[0]);
+
+    await createAdminNotification({
+      type: "contact_message",
+      title: "New inquiry message",
+      message: `${contact.name} sent: ${contact.subject}`,
+      href: "/admin/messages",
+      metadata: {
+        contactId: contact.id,
+        email: contact.email,
+        subject: contact.subject,
+      },
+    });
+
     return created({
-      contact: serializeContactMessage(result.rows[0]),
+      contact,
     });
   } catch (error) {
     return handleRouteError(error);
