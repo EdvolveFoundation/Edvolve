@@ -1,4 +1,4 @@
-const DEFAULT_SITE_URL = "https://edvolvefoundation.org";
+const DEFAULT_SITE_URL = "https://www.edvolvefoundation.org";
 
 export function getSiteUrl() {
   const configuredUrl =
